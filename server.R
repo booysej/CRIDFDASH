@@ -37,13 +37,13 @@ shinyServer(function(input, output, session) {
                            #lockedbasepolicy="Assume High Water Availability",
                            #lockedscenpolicy="Assume Low Water Availability",
                            createdpolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,
-                                                   thetxuclf=0,varyload=FALSE,load=0,withoutinga=FALSE),
+                                                   thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE),
                                               list(name="Assume Low Water Availability",
-                                                   thewater=40,thecoaluclf=60,thetxuclf=60,varyload=FALSE,load=0,withoutinga=FALSE),
+                                                   thewater=60,thecoaluclf=80,thetxuclf=50,varyload=TRUE,load=100,withoutinga=FALSE),
                                               list(name="Assume High Water Availability",
-                                                   thewater=160,thecoaluclf=60,thetxuclf=60,varyload=TRUE,load=100,withoutinga=FALSE)
+                                                   thewater=140,thecoaluclf=100,thetxuclf=100,varyload=TRUE,load=100,withoutinga=TRUE)
                                               ),
-                           availablepolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0,varyload=FALSE,load=0,withoutinga=FALSE))
+                           availablepolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE))
                            #availablepolicy=as.character(unique(txoutput$policy))[!grepl("unconstraint",
                           #                                                              as.character(unique(txoutput$policy)))]
   )  
@@ -57,20 +57,9 @@ shinyServer(function(input, output, session) {
       theuclf2 = input$d1uclf2
       thecountry = values$country
       theyear = input$d1year    
-      
       exclGI = input$withoutGrandInga
-      if(exclGI) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = input$varyload
-        if(varyload) {
-          load = input$d1cons
-        } else {
-          load = 0
-        }
-      }
-      
+      varyload=TRUE
+      load = input$d1cons
       if (!is.null(thewater) && !is.null(theuclf) && !is.null(theuclf2) && !is.null(thecountry) && !is.null(theyear)  ) {
         showarrowsunconstraint(thewater,theuclf,theuclf2,thecountry, theyear,"TransmissionOutput",FALSE,"d1m1",exclGI,varyload,load);
       }
@@ -92,65 +81,10 @@ shinyServer(function(input, output, session) {
   
   # Initial Map Step 3 setup
   output$d3m1 <- renderLeaflet({
-          
-          isolate({
-            thewater = input$d3water    
-            theuclf = input$d3uclf
-            fixedyear = 2020 #input$d3fixedyear
-            thecountry = values$country
-            theyear = input$d3year         
-            
-            flowtype = input$d3txflowtype
-            if(is.null(flowtype)) {
-              flowtype = "baseline";
-            }
-            
-            if(is.null(fixedyear)) {
-              fixedyear = 2020
-            }
-            
-            abe = "showall";
-            if (!is.null(thewater) && !is.null(theuclf) && !is.null(thecountry) && !is.null(theyear) && !is.null(flowtype) ) {
-              thepolicies = do.call(c,lapply(values$availablepolicy,function(x) {x$name}))
-              if(length(thepolicies)>1) {
-                
-                if(flowtype=="baseline") {
-                  r = values$availablepolicy[thepolicies==isolate(values$lockedbasepolicy)][[1]]
-                } else if(flowtype=="scenario") {
-                  r = values$availablepolicy[thepolicies==isolate(values$lockedscenpolicy)][[1]]
-                }
-                designwater = unlist(r[2])
-                designcoaluclf = unlist(r[3])
-                designtxuclf = unlist(r[4])
-                exclGI = unlist(r[7])
-                
-                if(exclGI==TRUE) {
-                  varyload=FALSE
-                  load=0
-                } else {
-                  varyload = unlist(r[5])
-                  if(varyload==TRUE) {
-                    load = unlist(r[6])
-                  } else {
-                    load = 0
-                  }
-                }
-                showarrowsconstraint(designwater,designcoaluclf,designtxuclf,fixedyear,
-                                     thewater,theuclf,100,thecountry, theyear,"TransmissionOutput",FALSE,"d3m1",exclGI,varyload,load,100);
-              }
-            } 
-          });
-          
           isolate({
             values$map2suspended = FALSE;
           });
-          
           leaflet(height=600) %>%
-            #        showArrows(mapname="d3m1",
-            #                   jsonfile="thedata.geojson",
-            #                   linkfile="linksd3m1.csv",    
-            #                   behaviour=abe,    
-            #                   showid="") %>%        
             addGeoJSON(geojson,layerId="main") %>%
             addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
             setView(22.8731,-22.9992,5) %>% hideArrows(mapname="d3m1",behaviour="hideall");
@@ -255,34 +189,8 @@ shinyServer(function(input, output, session) {
     
   },priority=1000)  
 
-  showarrows <-function(data,thewater,theuclf,thecountry, theyear,theseries="TransmissionOutput",
-                        proxy=TRUE, mapname="",thepolicy="unconstraint") {
-    txoutputfinal = subset(data, series == theseries)      
-    txoutputfinal = subset(txoutputfinal, Water.Availability == thewater)
-    txoutputfinal = subset(txoutputfinal, Coal.UCLF == theuclf)
-    txoutputfinal = subset(txoutputfinal, policy == thepolicy)
-    txoutputfinal = subset(txoutputfinal, time == theyear)          
-    t = txoutputfinal[,c("source","target","value"),with=FALSE]
-    t$text="%flow MWyr"
-    setnames(t,names(t),c("source","target","flow","text"))
-    t$flow = round(as.numeric(as.character(t$flow)))
-    t = t[t$flow>0,]      
-    t = t[, lapply(.SD, sum), by = c("source","target","text")]
-    write.csv(t,file=paste("www/links",mapname,".csv",sep=""),row.names = FALSE)
-    abe = "showall";
-    if(proxy) {
-      proxy2 = leafletProxy(mapname);     
-      proxy2  %>% showArrows(mapname=mapname,
-                           jsonfile="thedata.geojson",
-                           linkfile=paste("links",mapname,".csv",sep=""),    
-                           behaviour=abe,    
-                           showid="")  %>% hideArrows(mapname=mapname,behaviour="hideall");
-    }
-  }
-  
   showarrowsunconstraint <-function(thewater,thecoaluclf,thetxuclf,thecountry="All", theyear=2015,theseries="TransmissionOutput",
-                        proxy=TRUE, mapname="", exclGI=FALSE,adjcons=FALSE,cons=0) {
-    
+                        proxy=TRUE, mapname="", exclGI=FALSE,adjcons=FALSE,cons=100) {
     
     
     td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,cons/100)
@@ -290,7 +198,7 @@ shinyServer(function(input, output, session) {
     tfinal = subset(td, series == theseries)  
     units = as.character(tfinal$unit[1])
     if (thecountry!="All") {
-      tfinal = subset(tfinal, country.name == thecountry)          
+      #tfinal = subset(tfinal, country.name == thecountry)          
     }
     
     tfinal = merge(tfinal,dtfrom,by="producing.country")
@@ -315,12 +223,13 @@ shinyServer(function(input, output, session) {
     }
   }  
   
-  showarrowsconstraint <-function(designwater,designcoaluclf,designtxuclf,fixyear,thewater,thecoaluclf,thetxuclf,thecountry="All", 
+  showarrowsconstraint <-function(designwater,designcoaluclf,designtxuclf,designexclGI,designcons,thewater,thecoaluclf,thetxuclf,exclGI,cons,
+                                  thecountry="All", 
                                   theyear=2015,theseries="TransmissionOutput",
-                                  proxy=TRUE, mapname="", exclGI=FALSE,adjcons=FALSE,designcons=100,cons=100) {
+                                  proxy=TRUE, mapname="") {
      
-    td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,fixyear,thewater/100, thecoaluclf/100,thetxuclf/100, 
-                       exclGI,adjcons,designcons/100,cons/100)
+    td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,designexclGI,designcons/100, 
+                              thewater/100, thecoaluclf/100,thetxuclf/100,exclGI,cons/100)
     
     if(length(td)==0) {
         createAlert(session, "globalalert", "ga", title = "",
@@ -332,7 +241,7 @@ shinyServer(function(input, output, session) {
     tfinal = subset(td, series == theseries)  
     units = as.character(tfinal$unit[1])
     if (thecountry!="All") {
-      tfinal = subset(tfinal, country.name == thecountry)          
+      #tfinal = subset(tfinal, country.name == thecountry)          
     }
     
     tfinal = merge(tfinal,dtfrom,by="producing.country")
@@ -357,7 +266,6 @@ shinyServer(function(input, output, session) {
     }
   }  
   
-  
   # Update Arrows Step1
   observe({
     observe({
@@ -366,25 +274,10 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     theyear = input$d1year
-    
     exclGI = input$withoutGrandInga
-    if(!is.null(exclGI)) {
-      if(exclGI) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = input$varyload
-        if(!is.null(varyload)) {
-          if(varyload) {
-            load = input$d1cons
-          } else {
-            load = 0
-          }
-        } else {
-          load=0
-        }
-      }
-    }
+    load = input$d1cons
+    
+    varyload = TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry) & !is.null(theyear)  ) {
       showarrowsunconstraint(thewater,theuclf,theuclf2,thecountry, theyear,"TransmissionOutput",TRUE,"d1m1",exclGI,varyload,load);
@@ -400,13 +293,17 @@ shinyServer(function(input, output, session) {
     if( !is.null(values$lockedbasepolicy) && !is.null(values$lockedscenpolicy)) {    
       if( (values$lockedbasepolicy!='NONE') && (values$lockedscenpolicy!='NONE')) {    
         
-          thewater = input$d3water    
-          theuclf = input$d3uclf
-          fixedyear = 2020 #input$d3fixedyear
-          thecountry = values$country
-          theyear = input$d3year         
-          
-          flowtype = input$d3txflowtype
+        thewater = input$d3water    
+        theuclf = input$d3uclf
+        theuclf2 = input$d3uclf2
+        thecountry = values$country
+        theyear = input$d3year
+        fixedyear = 2020 #input$d3fixedyear
+        exclGI = input$d3withoutGrandInga
+        cons = input$d3cons
+        flowtype = input$d3txflowtype
+        
+        
         isolate({
           if(is.null(flowtype)) {
             flowtype = "baseline";
@@ -428,24 +325,23 @@ shinyServer(function(input, output, session) {
               designwater = unlist(r[2])
               designcoaluclf = unlist(r[3])
               designtxuclf = unlist(r[4])
-              exclGI = unlist(r[7])
-              
-              if(exclGI==TRUE) {
-                varyload=FALSE
-                load=0
-              } else {
-                varyload = unlist(r[5])
-                if(varyload==TRUE) {
-                  load = unlist(r[6])
-                } else {
-                  load = 0
-                }
-              }
+              designexclGI = unlist(r[7])
+              varyload=TRUE
+              designcons = unlist(r[6])
               
              # print("HERE")
               
-              showarrowsconstraint(designwater,designcoaluclf,designtxuclf,fixedyear,
-                                   thewater,theuclf,100,thecountry, theyear,"TransmissionOutput",TRUE,"d3m1",exclGI,varyload,load,100);
+              showarrowsconstraint(designwater,designcoaluclf,designtxuclf,
+                                   designexclGI,designcons,
+                                   thewater,
+                                   theuclf,
+                                   theuclf2,exclGI,cons,
+                                              thecountry, 
+                                              theyear,"TransmissionOutput",
+                                              TRUE, "d3m1")
+              
+              #showarrowsconstraint(designwater,designcoaluclf,designtxuclf,fixedyear,
+              #                     thewater,theuclf,100,thecountry, theyear,"TransmissionOutput",TRUE,"d3m1",exclGI,varyload,load,100);
             }
           } 
           
@@ -462,7 +358,29 @@ shinyServer(function(input, output, session) {
     values$endyear <- as.numeric(strsplit(as.character(input$daterange[2]),"-")[[1]][1])
   });
   
-
+  output$queryText <- renderText({
+    query <- parseQueryString(session$clientData$url_search)
+    if(!is.null(query$demo)) {
+      if(query$demo==1) {
+        updateTabsetPanel(session,"nav","STEP 1")
+        values$country="South Africa"
+        return(query$demo)
+      }
+      if(query$demo==2) {
+        return(query$demo)
+      }
+      if(query$demo==3) {
+        return(query$demo)
+      }
+      if(query$demo==4) {
+        return(query$demo)
+      }
+      if(query$demo==5) {
+        return(query$demo)
+      }
+    }
+  })
+  
   barunconstraint <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                               exclGI=FALSE,adjcons=FALSE,cons=0) {
     
@@ -602,136 +520,102 @@ shinyServer(function(input, output, session) {
   
   
   getunconstraint <- function(water,coaluclf,txuclf,
-                              exclGI=FALSE,adjcons=FALSE,cons=0) {
-    if(exclGI & adjcons) {stop("Not implemented")}
-    if(exclGI & !adjcons) { # exclude Grand Inga + Not vary cons unconstraint
-      crit <- subset(runMasterdata, policy_id==4 & 
-                     water.availability==water &
-                     coal.uclf==coaluclf & 
-                     transmission.uclf==txuclf)
-    }
-    if(!exclGI & !adjcons) { # Normal unconstraint With Grand Inga and No varing load
-      crit <- subset(runMasterdata, policy_id==1 & 
-                       water.availability==water &
-                       coal.uclf==coaluclf & 
-                       transmission.uclf==txuclf)
-    }
-    if(!exclGI & adjcons) { # vary load unconstraint With Grand Inga
-      crit <- subset(runMasterdata, policy_id==8 & 
-                       water.availability==water &
-                       coal.uclf==coaluclf & 
-                       transmission.uclf==1 &
-                       consumption.adjustment==cons)
-    }
+                              exclGI=FALSE,adjcons=FALSE,cons=1) {
+  
+    crit <- subset(runMasterdata, policy_id==11 & 
+                      water.availability==water &
+                      coal.uclf==coaluclf & 
+                      transmission.uclf==txuclf &
+                      grand.inga.out==as.integer(exclGI) &
+                      consumption.adjustment==cons
+                     )
     
-    #ms <- memoizedCall(makeMs,crit)
     ms <- makeMs2(crit)
     ms <- subset(ms,show=='yes')
     
     return(ms)
   }
   
-  getconstraint <- function(designwater,designcoaluclf,designtxuclf,fixyear,water, coaluclf,txuclf,
-                            exclGI=FALSE,adjcons=FALSE,designcons=0,cons=0,fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixcons=TRUE) {
+  getconstraint <- function(designwater,designcoaluclf,designtxuclf,designexclGI,designcons, 
+                            water, coaluclf,txuclf,exclGI,cons,
+                            fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE) {
     
-    
-      if(exclGI & adjcons) {stop("Not implemented")}
-      if(exclGI & !adjcons) { # exclude Grand Inga + Not vary cons unconstraint
-        
-        if(!fixwater) {
-          crit <- subset(runMasterdata, policy_id==5 &  
-                           coal.uclf==coaluclf & transmission.uclf==txuclf & 
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else if(!fixcoaluclf) {
-          crit <- subset(runMasterdata, policy_id==5 & water.availability==water & 
-                           transmission.uclf==txuclf & 
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else if(!fixtxuclf) {
-          crit <- subset(runMasterdata, policy_id==5 & water.availability==water & 
-                           coal.uclf==coaluclf &  
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else {
-          crit <- subset(runMasterdata, policy_id==5 & water.availability==water & 
-                       coal.uclf==coaluclf & transmission.uclf==txuclf & 
-                       fix.year == fixyear & design.water.availability == designwater &
-                       design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-                     )
-        }
-      }
-      if(!exclGI & !adjcons) { # Normal constraint With Grand Inga and No varing load
-        
-        if(!fixwater) {
-          crit <- subset(runMasterdata, policy_id==3 & 
-                           coal.uclf==coaluclf & transmission.uclf==txuclf &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else if(!fixcoaluclf) {
-          crit <- subset(runMasterdata, policy_id==3 & water.availability==water &
-                           transmission.uclf==txuclf &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else if(!fixtxuclf) {
-          crit <- subset(runMasterdata, policy_id==3 & water.availability==water &
-                           coal.uclf==coaluclf & 
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          )
-        } else {
-          crit <- subset(runMasterdata, policy_id==3 & water.availability==water &
-                           coal.uclf==coaluclf & transmission.uclf==txuclf &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.transmission.uclf == designtxuclf
-          ) 
-        }
-        
-      }
-      if(!exclGI & adjcons) { # vary load unconstraint With Grand Inga
-        
-        if(!fixwater) {
-          crit <- subset(runMasterdata, policy_id==9 & 
-                           coal.uclf==coaluclf & transmission.uclf==1 & consumption.adjustment==cons &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.consumption.adjustment == designcons & design.transmission.uclf == 1
-          )
-        } else if(!fixcoaluclf) {
-          crit <- subset(runMasterdata, policy_id==9 & water.availability==water &
-                            transmission.uclf==1 & consumption.adjustment==cons &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.consumption.adjustment == designcons & design.transmission.uclf == 1
-          )
-        } else if(!fixtxuclf) {
-          crit <- subset(runMasterdata, policy_id==9 & water.availability==water &
-                           coal.uclf==coaluclf &  consumption.adjustment==cons &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.consumption.adjustment == designcons & design.transmission.uclf == 1
-          )
-        } else if(!fixcons) {
-          crit <- subset(runMasterdata, policy_id==9 & water.availability==water &
-                           coal.uclf==coaluclf & transmission.uclf==1 & 
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.consumption.adjustment == designcons & design.transmission.uclf == 1
-          )
-        } else {
-          crit <- subset(runMasterdata, policy_id==9 & water.availability==water &
-                           coal.uclf==coaluclf & transmission.uclf==1 & consumption.adjustment==cons &
-                           fix.year == fixyear & design.water.availability == designwater &
-                           design.coal.uclf == designcoaluclf & design.consumption.adjustment == designcons & design.transmission.uclf == 1
-          )
-        }
-        
-       
-      }
-    
+    if(!fixwater) {
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       coal.uclf==coaluclf & 
+                       transmission.uclf==txuclf & 
+                       consumption.adjustment==cons &
+                       grand.inga.out==as.integer(exclGI) & 
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    } else if(!fixcoaluclf) {
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       water.availability==water &
+                       transmission.uclf==txuclf & 
+                       consumption.adjustment==cons &
+                       grand.inga.out==as.integer(exclGI) & 
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    } else if(!fixtxuclf) {
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       water.availability==water &
+                       coal.uclf==coaluclf & 
+                       consumption.adjustment==cons &
+                       grand.inga.out==as.integer(exclGI) & 
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    } else if(!fixcons) {
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       water.availability==water &
+                       coal.uclf==coaluclf & 
+                       transmission.uclf==txuclf & 
+                       grand.inga.out==as.integer(exclGI) & 
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    } else if(!fixexclGI) {      
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       water.availability==water &
+                       coal.uclf==coaluclf & 
+                       transmission.uclf==txuclf & 
+                       consumption.adjustment==cons &
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    } else {
+      crit <- subset(runMasterdata, policy_id==12 & 
+                       water.availability==water &
+                       coal.uclf==coaluclf & 
+                       transmission.uclf==txuclf & 
+                       consumption.adjustment==cons &
+                       grand.inga.out==as.integer(exclGI) & 
+                       design.water.availability == designwater &
+                       design.coal.uclf == designcoaluclf & 
+                       design.consumption.adjustment == designcons & 
+                       design.grand.inga.out==as.integer(designexclGI) & 
+                       design.transmission.uclf == designtxuclf
+      )
+    }
       
-    ms <- makeMs4(crit) #,timeseries)
+    ms <- makeMs4(crit) 
     ms <- subset(ms,show=='yes')
     return(ms)
   }
@@ -744,32 +628,17 @@ shinyServer(function(input, output, session) {
     thecountry = values$country
     thepolicy = "unconstraint"    
     
-    
     exclGI = input$withoutGrandInga
-    if(!is.null(exclGI)) {
-      if(exclGI) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = input$varyload
-        if(!is.null(varyload)) {
-          if(varyload) {
-            load = input$d1cons
-          } else {
-            load = 0
-          }
-        } else {
-          load=0
-        }
-      }
-      
+    load = input$d1cons
+    varyload=TRUE
+    
     
       if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
         return(barunconstraint(thewater,theuclf,theuclf2,thecountry, thedom="d1t1","Unconstraint","All",
                                values$startyear,values$endyear,exclGI,varyload,load));                
       }
         
-    }
+    
     
   });
   
@@ -821,17 +690,8 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     exclGI = input$withoutGrandInga
-    if(exclGI) {
-      varyload=FALSE
-      load=0
-    } else {
-      varyload = input$varyload
-      if(varyload) {
-        load = input$d1cons
-      } else {
-        load = 0
-      }
-    }
+    varyload=TRUE
+    load = input$d1cons
     
     return(infounconstraint(thewater,theuclf,theuclf2,thecountry,theseries="Demand", thedom="d1t2a",exclGI,varyload,load))
   });
@@ -841,17 +701,8 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     exclGI = input$withoutGrandInga
-    if(exclGI) {
-      varyload=FALSE
-      load=0
-    } else {
-      varyload = input$varyload
-      if(varyload) {
-        load = input$d1cons
-      } else {
-        load = 0
-      }
-    }
+    varyload=TRUE
+    load = input$d1cons
     return(infounconstraint(thewater,theuclf,theuclf2,thecountry,theseries="Generation", thedom="d1t2b",exclGI,varyload,load))
   });
   output$d1t2c <- renderChart({
@@ -860,17 +711,8 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     exclGI = input$withoutGrandInga
-    if(exclGI) {
-      varyload=FALSE
-      load=0
-    } else {
-      varyload = input$varyload
-      if(varyload) {
-        load = input$d1cons
-      } else {
-        load = 0
-      }
-    }
+    varyload = TRUE
+    load = input$d1cons
     return(infounconstraint(thewater,theuclf,theuclf2,thecountry,
                             theseries=c("Export revenue","Import cost","TransmissionInvestment",
                                         "Investment","Annual Investment","Fuel Cost","O&M Costs"), thedom="d1t2c",exclGI,varyload,load))
@@ -881,17 +723,8 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     exclGI = input$withoutGrandInga
-    if(exclGI) {
-      varyload=FALSE
-      load=0
-    } else {
-      varyload = input$varyload
-      if(varyload) {
-        load = input$d1cons
-      } else {
-        load = 0
-      }
-    }
+    varyload=TRUE
+    load = input$d1cons
     return(infounconstraint(thewater,theuclf,theuclf2,thecountry,theseries="Import Capacity", thedom="d1t2d",exclGI,varyload,load))
   });
   
@@ -903,38 +736,6 @@ shinyServer(function(input, output, session) {
     selectInput("createdpolicies","Created Policies:",
                 as.list(thepolicies)
                 ,size=5,selectize=FALSE)
-  })
-  
-  output$step3ui1 <- renderUI({
-
-    fluidRow(
-      column(3,
-             tags$h5("STEP 3 - CHECK SENSITIVITIES"),
-             bsButton("s3s2","<< Back (Step2)",style="primary"),
-             bsButton("s3s4","Help",style="primary")
-            
-      ),
-#       column(3,sliderInput("d3fixedyear", "Fixed Year (Keep Centralized Generation Fixed until this year)", 
-#                            2015,#min(unique(runMasterdata[runMasterdata$policy_id==3,]$fix.year )), 
-#                            2020,#max(unique(runMasterdata[runMasterdata$policy_id==3,]$fix.year)), 
-#                            2020,#mean(unique(runMasterdata[runMasterdata$policy_id==3,]$fix.year)),
-#                            5,
-#                            animate=FALSE,ticks=TRUE)),
-      column(3, "Fixed Year: 2020 (Keep Centralized Generation Fixed until this year)"),
-      column(3,sliderInput("d3water", "Water Availability % (Test Sensitivity)", 
-                           min(unique(runMasterdata[runMasterdata$policy_id==3,]$water.availability))*100, 
-                           max(unique(runMasterdata[runMasterdata$policy_id==3,]$water.availability))*100, 
-                           mean(unique(runMasterdata[runMasterdata$policy_id==3,]$water.availability))*100,
-                           20,
-                           animate=FALSE,ticks=FALSE)),
-      column(3,sliderInput("d3uclf", "Coal UCLF % (Test Sensitivity)", 
-                           min(unique(runMasterdata[runMasterdata$policy_id==3,]$coal.uclf))*100, 
-                           max(unique(runMasterdata[runMasterdata$policy_id==3,]$coal.uclf))*100, 
-                           mean(unique(runMasterdata[runMasterdata$policy_id==3,]$coal.uclf))*100,
-                           20,
-                           animate=FALSE,ticks=FALSE))
-    )
-    
   })
   
   
@@ -1062,18 +863,8 @@ shinyServer(function(input, output, session) {
       theuclf2 = unlist(r[4])
       thecountry = values$country
       exclGI = unlist(r[7])
-      
-      if(exclGI==TRUE) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = unlist(r[5])
-        if(varyload==TRUE) {
-          load = unlist(r[6])
-        } else {
-          load = 0
-        }
-      }
+      varyload=TRUE
+      load = unlist(r[6])
       if (!is.null(thewater) && !is.null(theuclf) && !is.null(theuclf2)  ) {
         return(barunconstraint(thewater,theuclf,theuclf2,thecountry, thedom="d2t1",r[1],"All",
                              values$startyear,values$endyear,exclGI,varyload,load));                
@@ -1112,17 +903,8 @@ shinyServer(function(input, output, session) {
             if (!input$s1policyname %in% thepolicies) {
               
               exclGI = input$withoutGrandInga
-              if(exclGI) {
-                varyload=FALSE
-                load=0
-              } else {
-                varyload = input$varyload
-                if(varyload) {
-                  load = input$d1cons
-                } else {
-                  load = 0
-                }
-              }
+              varyload=TRUE
+              load = input$d1cons
               
                values$createdpolicy[[isolate(length(values$createdpolicy))+1]] <- isolate(
                                                  list(name=input$s1policyname,
@@ -1194,7 +976,7 @@ shinyServer(function(input, output, session) {
                   updateSliderInput(session, "d1uclf", value = sel[[1]]$thecoaluclf)
                   updateSliderInput(session, "d1uclf2", value = sel[[1]]$thetxuclf)
                   updateCheckboxInput(session, "withoutGrandInga", value = sel[[1]]$withoutinga)
-                  updateCheckboxInput(session, "varyload", value = sel[[1]]$varyload)
+                  #updateCheckboxInput(session, "varyload", value = sel[[1]]$varyload)
                   updateSliderInput(session, "d1cons", value = sel[[1]]$load)
                 }
               }
@@ -1288,18 +1070,8 @@ shinyServer(function(input, output, session) {
       theuclf2 = unlist(r[4])
       thecountry = values$country
       exclGI = unlist(r[7])
-      
-      if(exclGI==TRUE) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = unlist(r[5])
-        if(varyload==TRUE) {
-          load = unlist(r[6])
-        } else {
-          load = 0
-        }
-      }
+      varyload=TRUE
+      load = unlist(r[6])
       
       td = getunconstraint(thewater/100, theuclf/100,theuclf2/100, exclGI,varyload,load/100)  
       tfinal = subset(td, series == input$d2pivotts)  
@@ -1340,9 +1112,10 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  
-  GetBaseScen <- function(seriesnames,fixyear,thewater=100,thecoaluclf=100,thetxuclf=100,cons=100,
-                          fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixcons=TRUE) {
+  GetBaseScen <- function(seriesnames,
+                          water, coaluclf,txuclf,exclGI,cons,
+                          fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE) {
+    
     thepolicies = do.call(c,lapply(values$availablepolicy,function(x) {x$name}))
     if(length(thepolicies)>1) {
       
@@ -1354,21 +1127,17 @@ shinyServer(function(input, output, session) {
       designwater = unlist(r[2])
       designcoaluclf = unlist(r[3])
       designtxuclf = unlist(r[4])
-      exclGI = unlist(r[7])
-      if(exclGI==TRUE) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = unlist(r[5])
-        if(varyload==TRUE) {
-          load = unlist(r[6])
-        } else {
-          load = 0
-        }
-      }
+      designexclGI = unlist(r[7])
+      varyload=TRUE
+      designcons = unlist(r[6])
       
-      td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,fixyear,thewater/100, thecoaluclf/100,thetxuclf/100, 
-                         exclGI,varyload,load/100,cons/100,fixwater,fixcoaluclf,fixtxuclf,fixcons)
+      
+      td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,designexclGI,designcons/100, 
+                                water/100, coaluclf/100,txuclf/100,exclGI,cons/100,
+                                fixwater,fixcoaluclf,fixtxuclf,fixexclGI,fixcons)
+      
+      #td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,fixyear,thewater/100, thecoaluclf/100,thetxuclf/100, 
+      #                   exclGI,varyload,load/100,cons/100,fixwater,fixcoaluclf,fixtxuclf,fixcons)
       
       if(length(td)==0) {
         createAlert(session, "globalalert", "ga", title = "",
@@ -1391,21 +1160,17 @@ shinyServer(function(input, output, session) {
       designwater = unlist(r[2])
       designcoaluclf = unlist(r[3])
       designtxuclf = unlist(r[4])
-      exclGI = unlist(r[7])
-      if(exclGI==TRUE) {
-        varyload=FALSE
-        load=0
-      } else {
-        varyload = unlist(r[5])
-        if(varyload==TRUE) {
-          load = unlist(r[6])
-        } else {
-          load = 0
-        }
-      }
+      designexclGI = unlist(r[7])
+      varyload=TRUE
+      designcons = unlist(r[6])
+
       
-      td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,fixyear,thewater/100, thecoaluclf/100,thetxuclf/100, 
-                         exclGI,varyload,load/100,cons/100,fixwater,fixcoaluclf,fixtxuclf,fixcons)
+      td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,designexclGI,designcons/100, 
+                         water/100, coaluclf/100,txuclf/100,exclGI,cons/100,
+                         fixwater,fixcoaluclf,fixtxuclf,fixexclGI,fixcons)
+      
+      #td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,fixyear,thewater/100, thecoaluclf/100,thetxuclf/100, 
+      #                   exclGI,varyload,load/100,cons/100,fixwater,fixcoaluclf,fixtxuclf,fixcons)
       
       if(length(td)==0) {
         createAlert(session, "globalalert", "ga", title = "",
@@ -1431,20 +1196,26 @@ shinyServer(function(input, output, session) {
   
   output$d3pivot1 <-renderRpivotTable({ 
       
-      thecoaluclf =  input$d3uclf
-      if(!is.null(thecoaluclf)) {
-        
+      water = input$d3water    
+      coaluclf = input$d3uclf
+      txuclf = input$d3uclf2
+      thecountry = values$country
+      fixedyear = 2020 
+      exclGI = input$d3withoutGrandInga
+      cons = input$d3cons
+      
+      if (!is.null(water) && !is.null(coaluclf) && !is.null(txuclf) && !is.null(thecountry) && !is.null(cons) && !is.null(exclGI) ) {
+      
         withProgress(message = 'Loading Pivot',
                      detail = '', value = 20, {
                        
               
-        
-      #thetxuclf =  input$d3uclf2
-      fixyear = 2020 # input$d3fixedyear
+      
       fs3 = GetBaseScen(c("Export revenue","Import cost","TransmissionInvestment","Investment",
-                          "Annual Investment","Fuel Cost","O&M Costs"),fixyear,
-                        100,thecoaluclf,100,100,
-                        fixwater=FALSE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixcons=TRUE)
+                          "Annual Investment","Fuel Cost","O&M Costs"),
+                              water, coaluclf,txuclf,exclGI,cons,
+                              fixwater=FALSE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE);
+      
   
       if(nrow(fs3)>0) {
         rpivotTable(data=fs3,rows=c("resulttype","coal\\.uclf"),cols=c("water\\.availability"),aggregatorName="Sum",rendererName="Line Chart",vals="value"
@@ -1470,15 +1241,24 @@ shinyServer(function(input, output, session) {
   })
 
   output$d3pivot2 <-renderRpivotTable({ 
+    
+    water = input$d3water    
+    coaluclf = input$d3uclf
+    txuclf = input$d3uclf2
+    thecountry = values$country
+    fixedyear = 2020 
+    exclGI = input$d3withoutGrandInga
+    cons = input$d3cons
+    
+    if (!is.null(water) && !is.null(coaluclf) && !is.null(txuclf) && !is.null(thecountry) && !is.null(cons) && !is.null(exclGI) ) {
+    
     withProgress(message = 'Loading Pivot',
                  detail = '', value = 20, {
     
-    thecoaluclf =  input$d3uclf
-    #thetxuclf =  input$d3uclf2
-    fixyear = 2020 # input$d3fixedyear
-    fs3 = GetBaseScen(c("Fuel Cost"),fixyear,
-                      100,thecoaluclf,100,100,
-                      fixwater=FALSE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixcons=TRUE)
+    
+      fs3 = GetBaseScen(c("Fuel Cost"),
+                              water, coaluclf,txuclf,exclGI,cons,
+                              fixwater=FALSE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE);
     
     if(nrow(fs3)>0) {
       rpivotTable(data=fs3,rows=c("coal\\.uclf","energy\\.source"),cols=c("resulttype","water\\.availability"),aggregatorName="Sum",rendererName="Table Barchart",vals="value"
@@ -1499,19 +1279,32 @@ shinyServer(function(input, output, session) {
       
     }
                  });
+    }
   })
   
   output$d3pivot3 <-renderRpivotTable({ 
+    
+    water = input$d3water    
+    coaluclf = input$d3uclf
+    txuclf = input$d3uclf2
+    thecountry = values$country
+    fixedyear = 2020 
+    exclGI = input$d3withoutGrandInga
+    cons = input$d3cons
+    
+    if (!is.null(water) && !is.null(coaluclf) && !is.null(txuclf) && !is.null(thecountry) && !is.null(cons) && !is.null(exclGI) ) {
+    
     withProgress(message = 'Loading Pivot',
                  detail = '', value = 20, {
-    thewater =  input$d3water
-    if(!is.null(thewater)) {
-      #thetxuclf =  input$d3uclf2
-      fixyear = 2020 # input$d3fixedyear
+    
+    if(!is.null(water)) {
+      
+      
       fs3 = GetBaseScen(c("Export revenue","Import cost","TransmissionInvestment","Investment",
-                          "Annual Investment","Fuel Cost","O&M Costs"),fixyear,
-                        thewater,100,100,100,
-                        fixwater=TRUE,fixcoaluclf=FALSE,fixtxuclf=TRUE,fixcons=TRUE)
+                          "Annual Investment","Fuel Cost","O&M Costs"),
+                        water, coaluclf,txuclf,exclGI,cons,
+                        fixwater=TRUE,fixcoaluclf=FALSE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE);
+      
       
       if(nrow(fs3)>0) {
         rpivotTable(data=fs3,rows=c("resulttype","water\\.availability"),cols=c("coal\\.uclf"),aggregatorName="Sum",rendererName="Line Chart",vals="value"
@@ -1533,19 +1326,33 @@ shinyServer(function(input, output, session) {
       }
     }
                  });
+    }
   })
 
   output$d3pivot4 <-renderRpivotTable({ 
+    
+    water = input$d3water    
+    coaluclf = input$d3uclf
+    txuclf = input$d3uclf2
+    thecountry = values$country
+    fixedyear = 2020 
+    exclGI = input$d3withoutGrandInga
+    cons = input$d3cons
+    
+    if (!is.null(water) && !is.null(coaluclf) && !is.null(txuclf) && !is.null(thecountry) && !is.null(cons) && !is.null(exclGI) ) {
+      
+    
     withProgress(message = 'Loading Pivot',
                  detail = '', value = 20, {
-    thewater =  input$d3water
-    thecoaluclf = input$d3uclf 
-    if(!is.null(thewater)) {
-      #thetxuclf =  input$d3uclf2
-      fixyear = 2020 # input$d3fixedyear
-      fs3 = GetBaseScen(c("New Capacity"),fixyear,
-                        thewater,thecoaluclf,100,100,
-                        fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixcons=TRUE)
+    
+    
+    if(!is.null(water)) {
+      
+      
+      fs3 = GetBaseScen(c("New Capacity"),
+                        water, coaluclf,txuclf,exclGI,cons,
+                        fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE);
+      
       
       if(nrow(fs3)>0) {
         rpivotTable(data=fs3,rows=c("energy\\.source"),cols=c("time","resulttype"),aggregatorName="Sum",rendererName="Stacked Bar Chart",vals="value"
@@ -1567,6 +1374,8 @@ shinyServer(function(input, output, session) {
       }
     }
                  });
+      
+    }
   })
   
     

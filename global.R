@@ -27,17 +27,13 @@ names(dtfrom) = c("source","producing.country")
 dtto = dt@data[,c("CODE","COUNTRY")]
 names(dtto) = c("target","consuming.country")  
 
-load("data/rdata/1.Rdata")
+load("data/sample.Rdata")
 series1 = df; # get series names masterdata
 
-load("data/run.masterdata.rdata")
-runMasterdata = as.data.table(runMasterdata)
-
+#load("data/run.masterdata.rdata")
+load("data/run.masterdata_11_12.rdata") 
+#runMasterdata = as.data.table(runMasterdata)
 
 idedata = read.csv("data/20150821_input_explorer_dataset.csv")
 ideseries = read.csv("data/20150821_masterdata_series.csv")
 ideobjects = read.csv("data/20150821_masterdata_objects.csv")
-
-
-
-
