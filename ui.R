@@ -145,23 +145,12 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         ),
                         column(9,
                       bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",
-                                                     "EVALUATE: New Capacity (Unconstrained)"
+                                                     "EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
                                                      #"EVALUATE: Timeseries")
                                                   )
-                                                     ,multiple=T,                                          
+                                                     ,multiple=F,                                          
                           
-                          bsCollapsePanel("EVALUATE: New Capacity (Unconstrained)",  style="info",                                                              
-                                          fluidRow(                                            
-                                            column(12,     
-                                                   div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
-                                                       showOutput("d1t1", "highcharts"))
-                                                   
-                                                   #showOutput("d1t1", "highcharts") 
-                                            )
-                                          )
-                                          
-                                          
-                          ),
+                          
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
                                       
                                       fluidRow(
@@ -181,6 +170,18 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                         
                                       )                             
                       ),   
+                      bsCollapsePanel("EVALUATE: New Capacity (Unconstrained)",  style="info",                                                              
+                                      fluidRow(                                            
+                                        column(12,     
+                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                   showOutput("d1t1", "highcharts"))
+                                               
+                                               #showOutput("d1t1", "highcharts") 
+                                        )
+                                      )
+                                      
+                                      
+                      ),
                           bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
                                  showOutput("d1t2a", "highcharts"),
                                  showOutput("d1t2b", "highcharts"),
@@ -295,7 +296,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                     whereafter the model runs again. "),
                       bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
-                        multiple=T,                                 
+                        multiple=F,                                 
                         bsCollapsePanel("CHECK: Map View and Tx Energy Flows - click on country to select",style="info",                                                              
                                         fluidRow(
                                           column(12,                                                        
