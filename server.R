@@ -290,7 +290,7 @@ shinyServer(function(input, output, session) {
     tfinal = subset(td, series == theseries)  
     units = as.character(tfinal$unit[1])
     if (thecountry!="All") {
-      #tfinal = subset(tfinal, country.name == thecountry)          
+      tfinal = subset(tfinal, country.name == thecountry)          
     }
     
     tfinal = merge(tfinal,dtfrom,by="producing.country")
@@ -332,7 +332,7 @@ shinyServer(function(input, output, session) {
     tfinal = subset(td, series == theseries)  
     units = as.character(tfinal$unit[1])
     if (thecountry!="All") {
-      #tfinal = subset(tfinal, country.name == thecountry)          
+      tfinal = subset(tfinal, country.name == thecountry)          
     }
     
     tfinal = merge(tfinal,dtfrom,by="producing.country")
