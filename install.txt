@@ -1,0 +1,66 @@
+### Install R CRAN Packages
+install.packages("devtools");
+install.packages("shiny");
+install.packages("shinyBS");
+install.packages("shinythemes");
+install.packages("R.cache");
+install.packages("RSQLite");
+install.packages("DT");
+install.packages("jsonlite");
+install.packages("memoise");
+install.packages("sp")
+install.packages("rgdal") # TIP: install gdal via ubuntu first
+install.packages("data.table")
+install.packages("RJSONIO")  
+
+### Install R GIT Packages
+devtools::install_github("booysej/DiagrammeR")
+devtools::install_github("shinyAce", "trestletech")
+devtools::install_github("booysej/leaflet") ## Added support for Sankey
+devtools::install_github("booysej/shinyTree")
+devtools::install_github(c("ramnathv/htmlwidgets", "smartinsightsfromdata/rpivotTable"))
+devtools::install_github('rCharts', 'ramnathv')
+
+# Download Shiny Server Open Edition
+# https://www.rstudio.com/products/shiny/shiny-server/
+#
+# 64bit
+# Size:  50.1 MB
+# MD5: 42ca99bad13f63988f5f3a960c92a322
+# Version:  1.4.0.721
+# Released:  2015-07-20
+# $ sudo apt-get install gdebi-core
+# $ wget https://download3.rstudio.org/ubuntu-12.04/x86_64/shiny-server-1.4.0.721-amd64.deb
+# $ sudo gdebi shiny-server-1.4.0.721-amd64.deb
+# Next Steps: Once installed, view the Administrator’s Guide to learn how to manage and configure Shiny Server. 
+## Go to http://127.0.0.1:3838/ and there should be a help page.
+## Basicaly it creates /etc/shiny-server/shiny-server.conf
+## Mine looks like this:
+#----------------------cut-------------------------
+# Instruct Shiny Server to run applications as the user "shiny"
+run_as jacques;
+
+# Define a server that listens on port 3838
+server {
+  listen 3838;
+
+  # Define a location at the base URL
+  location / {
+
+    # Host the directory of Shiny Apps stored in this directory
+    site_dir /home/jacques/shiny-server;
+
+    # Log all Shiny output to files in this directory
+    log_dir /var/log/shiny-server;
+
+    # When a user visits the base URL rather than a particular application,
+    # an index of the applications available in this directory will be shown.
+    directory_index on;
+  }
+}
+#----------------------cut-------------------------
+## I created /home/jacques/shiny-server and created and subfolder "apps"
+## Now you can test your app by going to http://127.0.0.1:3838/apps/CRIDFDASH for instance
+
+## restart shiny server like this as root: # restart shiny-server
+
