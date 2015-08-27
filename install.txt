@@ -64,3 +64,7 @@ server {
 
 ## restart shiny server like this as root: # restart shiny-server
 
+## Data not included in this GIT
+## Tested against
+# http://ec2-54-158-87-40.compute-1.amazonaws.com/downloads/20150825_1_3_4_5_8_9.tgz
+# Extract Rdata files into a folder like: shiny-server/apps/CRIDFDASH/data/rdata 
