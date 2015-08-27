@@ -40,8 +40,9 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                        tabsetPanel(id="overview",     
                             tabPanel("Photo",
                                      fluidRow(
-                                       column(6,tags$h4("STEP 0 - Overview")),                                                                                              
-                                       column(6,bsButton("s0s1","Next (Step1) >>",style="primary"))
+                                       column(6,
+                                              tags$h4("STEP 0 - Overview")),                                                                                              
+                                       column(6,bsButton("s0s1","Next (Step1) >>",style="primary"),verbatimTextOutput("queryText"))
                                      ),
                                     tags$img(src="overview.gif")
                             ),
@@ -84,46 +85,34 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         column(3,tags$h5("STEP 1 - EVALUATE/CREATE POLICIES"),
                                "Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."
                                ),
-                        #column(3,tags$h4("STEP 1 - EVALUATE POLICIES")),                                                                                              
                         column(2,sliderInput("d1water", "Water Availability % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==1,]$water.availability))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==1,]$water.availability))*100, 
-                                             mean(unique(runMasterdata[runMasterdata$policy_id==1,]$water.availability))*100,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
+                                             mean(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100,
                                              20,
-                                             animate=FALSE,ticks=FALSE)),
+                                             animate=FALSE,ticks=FALSE,width = "100%")),
                         column(2,sliderInput("d1uclf", "Coal UCLF % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==1,]$coal.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==1,]$coal.uclf))*100, 
-                                             mean(unique(runMasterdata[runMasterdata$policy_id==1,]$coal.uclf))*100,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100,
                                              20,
                                              animate=FALSE,ticks=FALSE)),
                         column(2,
-                               conditionalPanel(
-                                 condition = "(!input.varyload) || (input.varyload==null)",
                                sliderInput("d1uclf2", "Transmission UCLF % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==1,]$transmission.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==1,]$transmission.uclf))*100, 
-                                             mean(unique(runMasterdata[runMasterdata$policy_id==1,]$transmission.uclf))*100,
-                                             20,
-                                             animate=FALSE,ticks=FALSE) )
-                               ),
-                        
+                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100,
+                                             50,
+                                             animate=FALSE,ticks=FALSE) 
+                        ),
                         column(1,checkboxInput("withoutGrandInga", "Without Grand Inga", FALSE)), 
-                        column(1,
-                               conditionalPanel(
-                                 condition = "!input.withoutGrandInga",
-                               checkboxInput("varyload", "With Consumption Adjustment", FALSE)
-                               )
-                               ),
-                        column(1,
-                               conditionalPanel(
-                                 condition = "input.varyload",
+                        column(2,
                                sliderInput("d1cons", "Consumption % Adjustment", 
-                                           min(unique(runMasterdata[runMasterdata$policy_id==8,]$consumption.adjustment))*100, 
-                                           max(unique(runMasterdata[runMasterdata$policy_id==8,]$consumption.adjustment))*100, 
-                                           min(unique(runMasterdata[runMasterdata$policy_id==8,]$consumption.adjustment))*100,
+                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
+                                           mean(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100,
                                            20,
-                                           animate=FALSE,ticks=FALSE)) )
+                                           animate=FALSE,ticks=FALSE)) 
                       ),
                       fluidRow(
                         column(3,
@@ -144,12 +133,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                bsButton("s1s2","Next (Step2) >>",style="primary")
                         ),
                         column(9,
-                      bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",
-                                                     "EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
-                                                     #"EVALUATE: Timeseries")
-                                                  )
-                                                     ,multiple=F,                                          
-                          
+                      bsCollapse(id="story",  open=c("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
+                                                  ),multiple=F,                                          
                           
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
                                       
@@ -291,8 +276,48 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
              ),
              ########################### STEP3 ##########################
              tabPanel("STEP 3",
-                      uiOutput("step3ui1"),
-                      tags$span("Test Sensitivities on Baseline and Scenario, if we keep centralized generation CONSTRAINT using the Original selected expansion plans (Step 1 and 2) up until a selected fixed year, 
+                      fluidRow(
+                        column(2,
+                               tags$h5("STEP 3 - CHECK SENSITIVITIES"),
+                               bsButton("s3s2","<< Back (Step2)",style="primary"),
+                               bsButton("s3s4","Help",style="primary")
+                               
+                        ),
+                        #column(1, "Fixed Year: 2020 (Keep Centralized Generation Fixed until this year)"),
+                        column(2,sliderInput("d3water", "Water Availability % (Assumption)", 
+                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
+                                             mean(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100,
+                                             20,
+                                             animate=FALSE,ticks=FALSE,width = "100%")),
+                        column(2,sliderInput("d3uclf", "Coal UCLF % (Assumption)", 
+                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100,
+                                             20,
+                                             animate=FALSE,ticks=FALSE)),
+                        column(2,
+                               sliderInput("d3uclf2", "Transmission UCLF % (Assumption)", 
+                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100,
+                                           50,
+                                           animate=FALSE,ticks=FALSE) 
+                        ),
+                        column(2,checkboxInput("d3withoutGrandInga", "Without Grand Inga", FALSE)), 
+                        column(2,
+                               sliderInput("d3cons", "Consumption % Adjustment", 
+                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
+                                           mean(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100,
+                                           20,
+                                           animate=FALSE,ticks=FALSE)
+                               )
+                        
+                        
+                        
+                      ),
+                      tags$span("Test Sensitivities on Baseline and Scenario, if we keep centralized generation CONSTRAINT using the Original selected expansion plans (Step 1 and 2) up until the year 2020, 
                                     whereafter the model runs again. "),
                       bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
