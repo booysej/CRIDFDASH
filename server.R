@@ -396,6 +396,16 @@ shinyServer(function(input, output, session) {
         return(query$demo)
       }
       if(query$demo==3) {
+        
+        updateTabsetPanel(session,"nav","STEP 1")
+        values$country="All"
+        updateCollapse(session,id="story",open="DEMO3: Percentage change in fuel and O&M Costs (Contraint until 2020 with default design)")
+        updateSliderInput(session, "d1water", value = 100)
+        updateSliderInput(session, "d1uclf", value = 100)
+        updateSliderInput(session, "d1uclf2", value = 100)
+        updateCheckboxInput(session, "withoutGrandInga", value = FALSE)
+        updateSliderInput(session, "d1cons", value = 100)
+        
         return(query$demo)
       }
       if(query$demo==4) {
@@ -544,6 +554,91 @@ shinyServer(function(input, output, session) {
       h1$series(list( list(name="20% less consumption",data=(tfinal1b$value - tfinalb$value)),
                     list(name="20% more consumption",data=(tfinal2b$value - tfinalb$value))
                     ))      
+      # Print chart
+    }
+    
+    
+    h1$legend(symbolWidth = 10)
+    h1$set(dom = thedom)
+    h1$plotOptions(animation=FALSE,
+                   column=list(
+                     animation=FALSE,
+                     events=list(
+                       legendItemClick = paste("#! function() {
+                          console.log(this);
+                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                              name: this.name,
+                              visible: this.visible      
+                          })
+                         } !#",sep="")
+                       #legendItemClick = "#! function() {alert(this.name);  } !#"
+                     )
+                   )
+    )
+    h1$exporting(enabled = T)    
+    
+    return(h1)       
+  }  
+  
+  demo3 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+                    exclGI=FALSE,adjcons=FALSE,cons=0) {
+
+    td = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,80/100)
+    td2 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,120/100)
+
+    if(length(td[,1])==0) {return(NULL);}
+    if(length(td1[,1])==0) {return(NULL);}
+    if(length(td2[,1])==0) {return(NULL);}
+    
+    seriesname = c("Fuel Cost","O&M Costs")
+    tfinal = subset(td, series %in% seriesname)
+    tfinal1 = subset(td1, series %in% seriesname)  
+    tfinal2 = subset(td2, series %in% seriesname)  
+    units = "Percentage change in fuel and O&M Costs"
+    if (thecountry!="All") {
+      tfinal = subset(tfinal, country.name == thecountry)          
+      tfinal1 = subset(tfinal1, country.name == thecountry)
+      tfinal2 = subset(tfinal2, country.name == thecountry)
+    }
+    if (thelevel!="All") {
+      tfinal = subset(tfinal, level == thelevel)
+      tfinal1 = subset(tfinal1, level == thelevel)          
+      tfinal2 = subset(tfinal2, level == thelevel)          
+    }
+    tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+    tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+    tfinal2 = subset(tfinal2, time %in% (seq(startyear,endyear,1)))          
+    
+    if(nrow(tfinal)>0) {
+      tfinala = tfinal[, c("time","value","country.name"),with=F]
+      tfinalb = tfinala[, lapply(.SD, sum), by = c("country.name")]     
+      tfinalb = tfinalb[ ,c("country.name","value"),with=F]
+    }
+    if(nrow(tfinal1)>0) {
+      tfinal1a = tfinal1[, c("time","value","country.name"),with=F]
+      tfinal1b = tfinal1a[, lapply(.SD, sum), by = c("country.name")]  
+      tfinal1b = tfinal1b[ ,c("country.name","value"),with=F]
+    }
+    if(nrow(tfinal2)>0) {
+      tfinal2a = tfinal2[, c("time","value","country.name"),with=F]
+      tfinal2b = tfinal2a[, lapply(.SD, sum), by = c("country.name")]  
+      tfinal2b = tfinal2b[ ,c("country.name","value"),with=F]
+    }
+    
+    
+    
+    h1 <- rCharts:::Highcharts$new()
+    h1$chart(type = "column",marginLeft=50,height=500)
+    h1$title(text = paste("Percentage change in fuel and O&M Costs (",thecountry,")",sep=""))
+    h1$subtitle(text = paste(stext,sep=""))
+    
+    if(nrow(tfinal)>0) {
+      h1$xAxis(categories = as.character(tfinalb$country.name) )
+      h1$yAxis(title = list(text = units))
+      h1$series(list( list(name="20% less consumption",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
+                      list(name="20% more consumption",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
+      ))      
       # Print chart
     }
     
@@ -902,6 +997,23 @@ shinyServer(function(input, output, session) {
                    values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
+  
+  output$demo3 <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$country
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(demo3(thewater,theuclf,theuclf2,thecountry, thedom="demo3","","All",
+                   values$startyear,values$endyear,exclGI,varyload,load));                
+    }
+  });
+  
   
   
   

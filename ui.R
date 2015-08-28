@@ -186,6 +186,15 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                        )
                                      )
                      ),
+                     bsCollapsePanel("DEMO3: Percentage change in fuel and O&M Costs (Contraint until 2020 with default design)",  style="info",                                                              
+                                     fluidRow(                                            
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo3", "highcharts"))
+                                       )
+                                     )
+                     ),
+                     
                      
                      bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
                                  showOutput("d1t2a", "highcharts"),
