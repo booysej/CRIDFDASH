@@ -29,11 +29,31 @@ names(dtto) = c("target","consuming.country")
 
 load("data/sample.Rdata")
 series1 = df; # get series names masterdata
+series1[series1$unit=="MWyr",]$value = series1[series1$unit=="MWyr",]$value * 8.76581277 
+series1[series1$unit=="MWyr",]$unit = "GWh"
 
 #load("data/run.masterdata.rdata")
 load("data/run.masterdata_11_12.rdata") 
 #runMasterdata = as.data.table(runMasterdata)
 
-idedata = read.csv("data/20150821_input_explorer_dataset.csv")
-ideseries = read.csv("data/20150821_masterdata_series.csv")
-ideobjects = read.csv("data/20150821_masterdata_objects.csv")
+nodes <- subset(ref_objects, show=='yes')
+
+uniqueAndSorted <- function(col){
+  u <- unique(as.character(col))      
+  sort(u) 
+}
+
+fix.status <- function(col){
+  col <- as.character(col)
+  col[col=="N/A"] <- "Active"
+  col[col=="UC"] <-  "Active"
+  col
+}
+
+countries <- uniqueAndSorted(nodes$country.name)
+level <- uniqueAndSorted(nodes$level)
+nodes$status <- fix.status(nodes$status)
+
+#idedata = read.csv("data/20150821_input_explorer_dataset.csv")
+#ideseries = read.csv("data/20150821_masterdata_series.csv")
+#ideobjects = read.csv("data/20150821_masterdata_objects.csv")

@@ -34,7 +34,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
              bsAlert("globalalert")
            )
   ),
-  tabsetPanel(id="nav",  type="pills",   selected="STEP 0",
+  tabsetPanel(id="nav",  type="pills",   selected="STEP 1",                        
               ########################### STEP0 ##########################
               tabPanel("STEP 0",
                        tabsetPanel(id="overview",     
@@ -133,7 +133,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                bsButton("s1s2","Next (Step2) >>",style="primary")
                         ),
                         column(9,
-                      bsCollapse(id="story",  open=c("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
+                      bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
+                        "EVALUATE: New Capacity (Unconstrained)"
                                                   ),multiple=F,                                          
                           
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
@@ -429,7 +430,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                         p("Drawing Hierarchy..."),
                                         img(src="ajaxloaderq.gif")
                                     )
-                                  ),                               
+                                  ),      
+                                  verbatimTextOutput("treesel"),
                                   shinyTree("tree",search=T)
                            )
                          ),

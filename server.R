@@ -92,7 +92,8 @@ shinyServer(function(input, output, session) {
   
   # click on sea map ( show all)
   observe({
-    if(!is.null(input$d1m1_click)) {     
+    if(!is.null(input$d1m1_click)) {   
+      isolate({
       values$geojson$features <- isolate(lapply(values$geojson$features, function(feat) {              
         feat$properties$style <- list(fillOpacity = 0,color="green")
         values$selectedfeat = NULL;
@@ -101,6 +102,7 @@ shinyServer(function(input, output, session) {
       proxy = leafletProxy("d1m1") # %>% removeGeoJSON(geojson[[2]]$properties$name)             
       proxy %>% addGeoJSON(isolate(values$geojson),layerId="main") 
       values$country <- 'All';
+      });
     }
   },priority=1000)
   # click on country s1
@@ -109,7 +111,8 @@ shinyServer(function(input, output, session) {
     if(!is.null(input$d1m1_geojson_click)) {     
       theclick = input$d1m1_geojson_click      
     }    
-            
+        
+    isolate({    
     if(!is.null(theclick)) {                 
       tcountry <- names(gistranslate[gistranslate==theclick$properties$COUNTRY])              
       if(!is.null(tcountry)) {   
@@ -137,11 +140,13 @@ shinyServer(function(input, output, session) {
                   
       values$country <- tcountry
     }
+    });
     
   },priority=1000)  
   # click on sea map ( show all)
   observe({
-    if(!is.null(input$d3m1_click)) {     
+    if(!is.null(input$d3m1_click)) { 
+      isolate({
       values$geojson$features <- isolate(lapply(values$geojson$features, function(feat) {              
         feat$properties$style <- list(fillOpacity = 0,color="green")
         values$selectedfeat = NULL;
@@ -150,6 +155,7 @@ shinyServer(function(input, output, session) {
       proxy = leafletProxy("d3m1") # %>% removeGeoJSON(geojson[[2]]$properties$name)             
       proxy %>% addGeoJSON(isolate(values$geojson),layerId="main") 
       values$country <- 'All';
+      });
     }
   },priority=1000)
   # click on country s3
@@ -159,6 +165,7 @@ shinyServer(function(input, output, session) {
       theclick = input$d3m1_geojson_click      
     }
     
+    isolate({
     if(!is.null(theclick)) {                 
       tcountry <- names(gistranslate[gistranslate==theclick$properties$COUNTRY])              
       if(!is.null(tcountry)) {   
@@ -186,7 +193,7 @@ shinyServer(function(input, output, session) {
       
       values$country <- tcountry
     }
-    
+    });
   },priority=1000)  
 
   showarrowsunconstraint <-function(thewater,thecoaluclf,thetxuclf,thecountry="All", theyear=2015,theseries="TransmissionOutput",
@@ -206,7 +213,7 @@ shinyServer(function(input, output, session) {
     
     txoutputfinal = subset(tfinal, time == theyear)          
     t = txoutputfinal[,c("source","target","value"),with=FALSE]
-    t$text="%flow MWyr"
+    t$text=paste("%flow ",units,sep="")
     setnames(t,names(t),c("source","target","flow","text"))
     t$flow = round(as.numeric(as.character(t$flow)))
     t = t[t$flow>0,]      
@@ -249,7 +256,7 @@ shinyServer(function(input, output, session) {
     
     txoutputfinal = subset(tfinal, time == theyear)          
     t = txoutputfinal[,c("source","target","value"),with=FALSE]
-    t$text="%flow MWyr"
+    t$text=paste("%flow ",units,sep="")
     setnames(t,names(t),c("source","target","flow","text"))
     t$flow = round(as.numeric(as.character(t$flow)))
     t = t[t$flow>0,]      
@@ -433,7 +440,20 @@ shinyServer(function(input, output, session) {
     
     h1$legend(symbolWidth = 10)
     h1$set(dom = thedom)
-    h1$plotOptions(animation=FALSE,column=list(stacking= 'normal',animation=FALSE))
+    h1$plotOptions(animation=FALSE,
+                   column=list(
+                      stacking= 'normal',
+                      animation=FALSE,
+                      events=list(
+                        #legendItemClick = paste("#! function() {
+                        #  Shiny.onInputChange('",thedom,"LegendItemClick', {
+                        #      item: this
+                        #  })
+                        #   } !#",sep="")
+                        legendItemClick = "#! function() {  } !#"
+                       )
+                   )
+    )
     h1$exporting(enabled = T)    
     
     return(h1)       
@@ -505,6 +525,9 @@ shinyServer(function(input, output, session) {
       df
     })
     ms <- as.data.table(do.call(rbind,l))
+    ms[ms$unit=="MWyr",]$value = ms[ms$unit=="MWyr",]$value * 8.76581277 
+    ms[ms$unit=="MWyr",]$unit = "GWh"
+    return(ms)
   }
   makeMs2 <- memoise(makeMs)
   
@@ -515,6 +538,9 @@ shinyServer(function(input, output, session) {
       df
     })
     ms <- as.data.table(do.call(rbind,l))
+    ms[ms$unit=="MWyr",]$value = ms[ms$unit=="MWyr",]$value * 8.76581277 
+    ms[ms$unit=="MWyr",]$unit = "GWh"
+    return(ms)
   }
   makeMs4 <- function(crit) { return(memoizedCall(makeMs3,crit)) }
   
@@ -619,6 +645,12 @@ shinyServer(function(input, output, session) {
     ms <- subset(ms,show=='yes')
     return(ms)
   }
+  
+  
+  observe({
+    print(input$d1t1LegendItemClick);
+    
+  })
   
   # EVALUATE: New Capacity (Unconstrained)
   output$d1t1 <- renderChart({      
@@ -1394,6 +1426,8 @@ shinyServer(function(input, output, session) {
     }    
   });
   
+
+  
   # Draw: Energy chain TREE (Hierarchy)
   output$tree <- renderTree({
     
@@ -1405,16 +1439,91 @@ shinyServer(function(input, output, session) {
     
     withProgress(message = 'Loading hierarchy....',
                  detail = 'Please wait', value = 0, {
-                   
-                  
-                   
+              
+                   tree <- lapply(countries, function(country){
+                     level.list <- lapply(level[c(4,1,3,5,2)], function(alevel){
+                       energy.sources <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel)$energy.source)
+                       energy.sources.list <- lapply(energy.sources, function(asource){
+                         status <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource)$status)
+                         status.list <- lapply(status, function(astatus){
+                           #names <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$name)        
+                           tech <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$technology)        
+                           lnames <- as.list(tech)
+                           names(lnames) <- tech
+                           return(lnames)
+                         })
+                         names(status.list) <- status
+                         return(status.list)
+                       })
+                       names(energy.sources.list) <- energy.sources
+                       return(energy.sources.list)
+                     })
+                     names(level.list) <- level[c(4,1,3,5,2)]
+                     return(level.list)
+                   })
+                   names(tree) <- countries
+
                  });
     
-    return(list(Country="Country",
-                Level="Level",
-                EnergySource="EnergySource",
-                Status="Status",
-                Name="Name"))
+    return(tree)
+  })
+  
+  output$treesel <- renderText({
+    tree <- input$tree
+    
+   
+      t = get_selected(tree)
+      
+     
+      if(length(t)>0) {
+        ans = attr(t[[1]],"ancestry")
+        if(length(ans)>0) {
+          country = ans[1]
+        } else {
+          country = t[[1]]
+        }
+        
+        if (length(ans)==4) {          
+          paste(country,t[[1]],sep=",");
+        } else {
+          ""
+        }
+        
+        
+        
+        
+      } else {
+        ""
+      }
+      
+        
+#         if (length(ans)==5) {          
+#           lk = unlist(lapply(strsplit(ans,"\\("),function(x) { gsub(" $","",x[1]) } ))          
+#           eff = as.character(enodes[enodes$name==lk[3] & 
+#                                       enodes$level==lk[2] & 
+#                                       enodes$country==lk[1],]$energyform.full) 
+#           
+#           myt = gsub("\\)","",strsplit(t[[1]][1],"\\(")[[1]][2] )
+#           
+#           values$leafnode = paste(myt, lk[4] ,eff,lk[1],lk[2],lk[3], sep=":")
+#           #values$leafnode = paste(t[[1]][1], lk[4] ,eff,lk[1],lk[2],lk[3], sep=":")
+#           values$country = lk[1]
+#           
+#         } else {
+#           values$leafnode = "None"
+#           values$leaftypes=data.frame()
+#           values$leafdata=data.frame()
+#           if(!is.na(country)) {                      
+#             values$country=country
+#           } else {            
+#             values$country=t[[1]][1]                    
+#           }
+#         }
+       
+         
+       
+    
+    
   })
   
   
