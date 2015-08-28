@@ -365,15 +365,34 @@ shinyServer(function(input, output, session) {
     values$endyear <- as.numeric(strsplit(as.character(input$daterange[2]),"-")[[1]][1])
   });
   
-  output$queryText <- renderText({
+  #output$queryText <- renderText({
+  observe({
     query <- parseQueryString(session$clientData$url_search)
     if(!is.null(query$demo)) {
       if(query$demo==1) {
         updateTabsetPanel(session,"nav","STEP 1")
-        values$country="South Africa"
+        values$country="Namibia"
+        updateSliderInput(session, "daterange",value=c(2011,2050))
+        
+        updateCollapse(session,id="story",open="DEMO1: New Capacity for 2 Water Availability Scenarios")
+        updateSliderInput(session, "d1water", value = 100)
+        updateSliderInput(session, "d1uclf", value = 100)
+        updateSliderInput(session, "d1uclf2", value = 100)
+        updateCheckboxInput(session, "withoutGrandInga", value = FALSE)
+        updateSliderInput(session, "d1cons", value = 100)
+        
         return(query$demo)
       }
       if(query$demo==2) {
+        updateTabsetPanel(session,"nav","STEP 1")
+        values$country="All"
+        updateCollapse(session,id="story",open="DEMO2: Difference in Average Price per Country for 2 Consumption Scenarios")
+        updateSliderInput(session, "d1water", value = 100)
+        updateSliderInput(session, "d1uclf", value = 100)
+        updateSliderInput(session, "d1uclf2", value = 100)
+        updateCheckboxInput(session, "withoutGrandInga", value = FALSE)
+        updateSliderInput(session, "d1cons", value = 100)
+        
         return(query$demo)
       }
       if(query$demo==3) {
@@ -385,11 +404,177 @@ shinyServer(function(input, output, session) {
       if(query$demo==5) {
         return(query$demo)
       }
+    } else {
+      updateTabsetPanel(session,"nav","STEP 1")
+      updateCollapse(session,id="story",open="EVALUATE: Flows, Map View (Unconstrained) - click on country to filter")
     }
   })
   
+  demo1 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+                    exclGI=FALSE,adjcons=FALSE,cons=0) {
+    
+    
+    td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,cons/100)
+    if(length(td[,1])==0) {return(NULL);}
+    
+    seriesname = "New Capacity"
+    tfinal = subset(td, series == seriesname)  
+    units = as.character(tfinal$unit[1])
+    
+    if (thecountry!="All") {
+      tfinal = subset(tfinal, country.name == thecountry)          
+    }
+    if (thelevel!="All") {
+      tfinal = subset(tfinal, level == thelevel)          
+    }
+    tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+    
+    
+    #x = unique(tfinal$time)
+    #x = x[order(x)]
+    
+    if(nrow(tfinal)>0) {
+      
+      tfinal2 = tfinal[, c("time","value","energy.source"),with=F]
+      tfinal3 = tfinal2[, lapply(.SD, sum), by = c("time","energy.source")]     
+      tfinal3 = tfinal3[(tfinal3$time>2010) & (tfinal3$time<2050) ,]
+      
+      tdat = as.data.frame(t(reshape(tfinal3,idvar=c("energy.source"),direction="wide")),stringsAsFactors=F)
+      colnames(tdat) = as.character(unlist(tdat[1,]))
+      tdat = tdat[-1,]
+      rownames(tdat) = gsub("value\\.","",rownames(tdat))      
+      
+      x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
+      rownames(x) = rownames(tdat)
+    }
+    
+    h1 <- rCharts:::Highcharts$new()
+    h1$chart(type = "area",marginLeft=50,height=300)
+    h1$title(text = paste("New Capacity (",thecountry,")",sep=""))
+    h1$subtitle(text = paste(stext,sep=""))
+    
+    if(nrow(tfinal)>0) {
+      h1$xAxis(categories = paste("",rownames(x),sep="") )
+      h1$yAxis(title = list(text = units),stackLabels= list(enabled=T))
+      h1$data(x)      
+      # Print chart
+    }
+    
+    
+    h1$legend(symbolWidth = 10)
+    h1$set(dom = thedom)
+    h1$plotOptions(animation=FALSE,
+                   area=list(
+                     stacking= 'normal',
+                     animation=FALSE,
+                     events=list(
+                       legendItemClick = paste("#! function() {
+                          console.log(this);
+                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                              name: this.name,
+                              visible: this.visible      
+                          })
+                         } !#",sep="")
+                       #legendItemClick = "#! function() {alert(this.name);  } !#"
+                     )
+                   )
+    )
+    h1$exporting(enabled = T)    
+    
+    return(h1)       
+  }  
+  
+  demo2 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+                              exclGI=FALSE,adjcons=FALSE,cons=0) {
+    
+    td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+    td1 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,80/100)
+    td2 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,120/100)
+    if(length(td[,1])==0) {return(NULL);}
+    if(length(td1[,1])==0) {return(NULL);}
+    if(length(td2[,1])==0) {return(NULL);}
+    
+    seriesname = "Avg Price"
+    tfinal = subset(td, series == seriesname)
+    tfinal1 = subset(td1, series == seriesname)  
+    tfinal2 = subset(td2, series == seriesname)  
+    units = "Difference in Average Price"
+    if (thecountry!="All") {
+      tfinal = subset(tfinal, country.name == thecountry)          
+      tfinal1 = subset(tfinal1, country.name == thecountry)
+      tfinal2 = subset(tfinal2, country.name == thecountry)
+    }
+    if (thelevel!="All") {
+      tfinal = subset(tfinal, level == thelevel)
+      tfinal1 = subset(tfinal1, level == thelevel)          
+      tfinal2 = subset(tfinal2, level == thelevel)          
+    }
+    tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+    tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+    tfinal2 = subset(tfinal2, time %in% (seq(startyear,endyear,1)))          
+    
+    if(nrow(tfinal)>0) {
+      tfinala = tfinal[, c("time","value","country.name"),with=F]
+      tfinalb = tfinala[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+      tfinalb = tfinalb[(tfinalb$time>2010) & (tfinalb$time<2050) ,c("country.name","value"),with=F]
+    }
+    if(nrow(tfinal1)>0) {
+      tfinal1a = tfinal1[, c("time","value","country.name"),with=F]
+      tfinal1b = tfinal1a[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+      tfinal1b = tfinal1b[(tfinal1b$time>2010) & (tfinal1b$time<2050) ,c("country.name","value"),with=F]
+    }
+    if(nrow(tfinal2)>0) {
+      tfinal2a = tfinal2[, c("time","value","country.name"),with=F]
+      tfinal2b = tfinal2a[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+      tfinal2b = tfinal2b[(tfinal2b$time>2010) & (tfinal2b$time<2050) ,c("country.name","value"),with=F]
+    }
+    
+    # tfinal1b$value - tfinalb$value # 20% less consumption
+    # tfinal2b$value - tfinalb$value # 20% more consumption
+    
+    
+    h1 <- rCharts:::Highcharts$new()
+    h1$chart(type = "column",marginLeft=50,height=500)
+    h1$title(text = paste("Difference in Average Price (",thecountry,")",sep=""))
+    h1$subtitle(text = paste(stext,sep=""))
+    
+    if(nrow(tfinal)>0) {
+      h1$xAxis(categories = as.character(tfinalb$country.name) )
+      h1$yAxis(title = list(text = units))
+      h1$series(list( list(name="20% less consumption",data=(tfinal1b$value - tfinalb$value)),
+                    list(name="20% more consumption",data=(tfinal2b$value - tfinalb$value))
+                    ))      
+      # Print chart
+    }
+    
+    
+    h1$legend(symbolWidth = 10)
+    h1$set(dom = thedom)
+    h1$plotOptions(animation=FALSE,
+                   column=list(
+                     animation=FALSE,
+                     events=list(
+                       legendItemClick = paste("#! function() {
+                          console.log(this);
+                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                              name: this.name,
+                              visible: this.visible      
+                          })
+                         } !#",sep="")
+                       #legendItemClick = "#! function() {alert(this.name);  } !#"
+                     )
+                   )
+    )
+    h1$exporting(enabled = T)    
+    
+    return(h1)       
+  }  
+  
+  
+  
   barunconstraint <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                               exclGI=FALSE,adjcons=FALSE,cons=0) {
+    
     
     td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,cons/100)
     if(length(td[,1])==0) {return(NULL);}
@@ -445,12 +630,14 @@ shinyServer(function(input, output, session) {
                       stacking= 'normal',
                       animation=FALSE,
                       events=list(
-                        #legendItemClick = paste("#! function() {
-                        #  Shiny.onInputChange('",thedom,"LegendItemClick', {
-                        #      item: this
-                        #  })
-                        #   } !#",sep="")
-                        legendItemClick = "#! function() {  } !#"
+                        legendItemClick = paste("#! function() {
+                          console.log(this);
+                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                              name: this.name,
+                              visible: this.visible      
+                          })
+                         } !#",sep="")
+                        #legendItemClick = "#! function() {alert(this.name);  } !#"
                        )
                    )
     )
@@ -648,7 +835,7 @@ shinyServer(function(input, output, session) {
   
   
   observe({
-    print(input$d1t1LegendItemClick);
+    print(input$d1t1LegendItemClick$name);
     
   })
   
@@ -659,20 +846,64 @@ shinyServer(function(input, output, session) {
     theuclf2 = input$d1uclf2
     thecountry = values$country
     thepolicy = "unconstraint"    
-    
     exclGI = input$withoutGrandInga
     load = input$d1cons
     varyload=TRUE
-    
     
       if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
         return(barunconstraint(thewater,theuclf,theuclf2,thecountry, thedom="d1t1","Unconstraint","All",
                                values$startyear,values$endyear,exclGI,varyload,load));                
       }
-        
-    
-    
   });
+  
+  output$demo1a <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$country
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(demo1(80,theuclf,theuclf2,thecountry, thedom="demo1a","Assume 20% Less Water","All",
+                             values$startyear,values$endyear,exclGI,varyload,load));                
+    }
+  });
+  output$demo1b <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$country
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 20% More Water","All",
+                   values$startyear,values$endyear,exclGI,varyload,load));                
+    }
+  });
+  
+  output$demo2 <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$country
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(demo2(thewater,theuclf,theuclf2,thecountry, thedom="demo2","","All",
+                   values$startyear,values$endyear,exclGI,varyload,load));                
+    }
+  });
+  
+  
   
 
   infounconstraint <- function(thewater,thecoaluclf,thetxuclf,thecountry,theseries="Demand", thedom="d1t2a", exclGI=FALSE,adjcons=FALSE,cons=0) {

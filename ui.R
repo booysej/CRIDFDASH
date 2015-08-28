@@ -134,7 +134,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         ),
                         column(9,
                       bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
-                        "EVALUATE: New Capacity (Unconstrained)"
+                        #"EVALUATE: New Capacity (Unconstrained)"
                                                   ),multiple=F,                                          
                           
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
@@ -161,14 +161,33 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                         column(12,     
                                                div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
                                                    showOutput("d1t1", "highcharts"))
-                                               
-                                               #showOutput("d1t1", "highcharts") 
                                         )
                                       )
                                       
                                       
                       ),
-                          bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
+                     bsCollapsePanel("DEMO1: New Capacity for 2 Water Availability Scenarios",  style="info",                                                              
+                                     fluidRow(                                            
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo1a", "highcharts"))
+                                       ),
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo1b", "highcharts"))
+                                       )
+                                     )
+                     ),
+                     bsCollapsePanel("DEMO2: Difference in Average Price per Country for 2 Consumption Scenarios",  style="info",                                                              
+                                     fluidRow(                                            
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo2", "highcharts"))
+                                       )
+                                     )
+                     ),
+                     
+                     bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
                                  showOutput("d1t2a", "highcharts"),
                                  showOutput("d1t2b", "highcharts"),
                                  showOutput("d1t2c", "highcharts"),
