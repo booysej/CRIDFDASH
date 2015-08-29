@@ -39,9 +39,9 @@ shinyServer(function(input, output, session) {
                            createdpolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,
                                                    thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE),
                                               list(name="Assume Low Water Availability",
-                                                   thewater=60,thecoaluclf=80,thetxuclf=50,varyload=TRUE,load=100,withoutinga=FALSE),
+                                                   thewater=100,thecoaluclf=100,thetxuclf=100,varyload=TRUE,load=100,withoutinga=FALSE),
                                               list(name="Assume High Water Availability",
-                                                   thewater=140,thecoaluclf=100,thetxuclf=100,varyload=TRUE,load=100,withoutinga=TRUE)
+                                                   thewater=120,thecoaluclf=100,thetxuclf=100,varyload=TRUE,load=100,withoutinga=FALSE)
                                               ),
                            availablepolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE))
                            #availablepolicy=as.character(unique(txoutput$policy))[!grepl("unconstraint",
@@ -374,7 +374,7 @@ shinyServer(function(input, output, session) {
         values$country="Namibia"
         updateSliderInput(session, "daterange",value=c(2011,2050))
         
-        updateCollapse(session,id="story",open="DEMO1: New Capacity for 2 Water Availability Scenarios")
+        updateCollapse(session,id="story",open="1.1) New Capacity (2 Water Availability Scenarios)")
         updateSliderInput(session, "d1water", value = 100)
         updateSliderInput(session, "d1uclf", value = 100)
         updateSliderInput(session, "d1uclf2", value = 100)
@@ -386,7 +386,7 @@ shinyServer(function(input, output, session) {
       if(query$demo==2) {
         updateTabsetPanel(session,"nav","STEP 1")
         values$country="All"
-        updateCollapse(session,id="story",open="DEMO2: Difference in Average Price per Country for 2 Consumption Scenarios")
+        updateCollapse(session,id="story",open="2.1) Average Price Difference")
         updateSliderInput(session, "d1water", value = 100)
         updateSliderInput(session, "d1uclf", value = 100)
         updateSliderInput(session, "d1uclf2", value = 100)
@@ -399,7 +399,7 @@ shinyServer(function(input, output, session) {
         
         updateTabsetPanel(session,"nav","STEP 1")
         values$country="All"
-        updateCollapse(session,id="story",open="DEMO3: Percentage change in fuel and O&M Costs (Contraint until 2020 with default design)")
+        updateCollapse(session,id="story",open="4.1) Fuel Cost vs Consumption (Contraint until 2020 with default design)")
         updateSliderInput(session, "d1water", value = 100)
         updateSliderInput(session, "d1uclf", value = 100)
         updateSliderInput(session, "d1uclf2", value = 100)
@@ -409,6 +409,16 @@ shinyServer(function(input, output, session) {
         return(query$demo)
       }
       if(query$demo==4) {
+        
+        updateTabsetPanel(session,"nav","STEP 1")
+        values$country="All"
+        updateCollapse(session,id="story",open="4.2) Cost vs Sensitivity (Contraint until 2020 with default design)")
+        updateSliderInput(session, "d1water", value = 100)
+        updateSliderInput(session, "d1uclf", value = 100)
+        updateSliderInput(session, "d1uclf2", value = 100)
+        updateCheckboxInput(session, "withoutGrandInga", value = FALSE)
+        updateSliderInput(session, "d1cons", value = 100)
+        
         return(query$demo)
       }
       if(query$demo==5) {
@@ -420,6 +430,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # 1.1
   demo1 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
     
@@ -494,12 +505,13 @@ shinyServer(function(input, output, session) {
     return(h1)       
   }  
   
+  # 2.1
   demo2 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                               exclGI=FALSE,adjcons=FALSE,cons=0) {
     
     td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
-    td1 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,80/100)
-    td2 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,120/100)
+    td1 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,90/100)
+    td2 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,110/100)
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
     if(length(td2[,1])==0) {return(NULL);}
@@ -580,12 +592,13 @@ shinyServer(function(input, output, session) {
     return(h1)       
   }  
   
+  # 4.1
   demo3 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
 
     td = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
-    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,80/100)
-    td2 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,120/100)
+    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,90/100)
+    td2 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,110/100)
 
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
@@ -664,6 +677,84 @@ shinyServer(function(input, output, session) {
     
     return(h1)       
   }  
+  
+  # 4.2
+  demo4 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+                    exclGI=FALSE,adjcons=FALSE,cons=0) {
+    
+    td = getconstraint(1,1,1,FALSE,1,thewater/100, 100/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, 90/100,thetxuclf/100, exclGI,100/100)
+    
+    if(length(td[,1])==0) {return(NULL);}
+    if(length(td1[,1])==0) {return(NULL);}
+    
+    seriesname = c("Fuel Cost","O&M Costs","Import cost","Export revenue")
+    tfinal = subset(td, series %in% seriesname)
+    tfinal1 = subset(td1, series %in% seriesname)  
+    
+    units = "Percentage change in Cost"
+    if (thecountry!="All") {
+      tfinal = subset(tfinal, country.name == thecountry)          
+      tfinal1 = subset(tfinal1, country.name == thecountry)
+    }
+    if (thelevel!="All") {
+      tfinal = subset(tfinal, level == thelevel)
+      tfinal1 = subset(tfinal1, level == thelevel)          
+    }
+    tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+    tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+    
+    if(nrow(tfinal)>0) {
+      tfinala = tfinal[, c("time","value","country.name","series"),with=F]
+      tfinalb = tfinala[, lapply(.SD, sum), by = c("country.name","series")]     
+      tfinalb = tfinalb[ ,c("country.name","series","value"),with=F]
+    }
+    if(nrow(tfinal1)>0) {
+      tfinal1a = tfinal1[, c("time","value","country.name","series"),with=F]
+      tfinal1b = tfinal1a[, lapply(.SD, sum), by = c("country.name","series")]  
+      tfinal1b = tfinal1b[ ,c("country.name","series","value"),with=F]
+    }
+    
+    h1 <- rCharts:::Highcharts$new()
+    h1$chart(type = "column",marginLeft=50,height=500)
+    h1$title(text = paste("Percentage change in Cost (",thecountry,")",sep=""))
+    h1$subtitle(text = paste(stext,sep=""))
+    
+    if(nrow(tfinal)>0) {
+      h1$xAxis(categories = as.character(tfinalb$country.name) )
+      h1$yAxis(title = list(text = units))
+      h1$series(list( 
+                      list(name="Export revenue",data=((tfinal1b[tfinal1b$series=="Export revenue",]$value - tfinalb[tfinalb$series=="Export revenue",]$value)/tfinalb[tfinalb$series=="Export revenue",]$value)*100 ),
+                      list(name="Fuel Cost",data=((tfinal1b[tfinal1b$series=="Fuel Cost",]$value - tfinalb[tfinalb$series=="Fuel Cost",]$value)/tfinalb[tfinalb$series=="Fuel Cost",]$value)*100 ),
+                      list(name="Import cost",data=((tfinal1b[tfinal1b$series=="Import cost",]$value - tfinalb[tfinalb$series=="Import cost",]$value)/tfinalb[tfinalb$series=="Import cost",]$value)*100 ),
+                      list(name="O&M Costs",data=((tfinal1b[tfinal1b$series=="O&M Costs",]$value - tfinalb[tfinalb$series=="O&M Costs",]$value)/tfinalb[tfinalb$series=="O&M Costs",]$value)*100 )
+      ))      
+      # Print chart
+    }
+    
+    
+    h1$legend(symbolWidth = 10)
+    h1$set(dom = thedom)
+    h1$plotOptions(animation=FALSE,
+                   column=list(
+                     animation=FALSE,
+                     events=list(
+                       legendItemClick = paste("#! function() {
+                          console.log(this);
+                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                              name: this.name,
+                              visible: this.visible      
+                          })
+                         } !#",sep="")
+                       #legendItemClick = "#! function() {alert(this.name);  } !#"
+                     )
+                   )
+    )
+    h1$exporting(enabled = T)    
+    
+    return(h1)       
+  }  
+  
   
   
   
@@ -830,7 +921,7 @@ shinyServer(function(input, output, session) {
   getunconstraint <- function(water,coaluclf,txuclf,
                               exclGI=FALSE,adjcons=FALSE,cons=1) {
   
-    crit <- subset(runMasterdata, policy_id==11 & 
+    crit <- subset(runMasterdata, policy_id==14 & 
                       water.availability==water &
                       coal.uclf==coaluclf & 
                       transmission.uclf==txuclf &
@@ -849,7 +940,7 @@ shinyServer(function(input, output, session) {
                             fixwater=TRUE,fixcoaluclf=TRUE,fixtxuclf=TRUE,fixexclGI=TRUE,fixcons=TRUE) {
     
     if(!fixwater) {
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        coal.uclf==coaluclf & 
                        transmission.uclf==txuclf & 
                        consumption.adjustment==cons &
@@ -861,7 +952,7 @@ shinyServer(function(input, output, session) {
                        design.transmission.uclf == designtxuclf
       )
     } else if(!fixcoaluclf) {
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        water.availability==water &
                        transmission.uclf==txuclf & 
                        consumption.adjustment==cons &
@@ -873,7 +964,7 @@ shinyServer(function(input, output, session) {
                        design.transmission.uclf == designtxuclf
       )
     } else if(!fixtxuclf) {
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        water.availability==water &
                        coal.uclf==coaluclf & 
                        consumption.adjustment==cons &
@@ -885,7 +976,7 @@ shinyServer(function(input, output, session) {
                        design.transmission.uclf == designtxuclf
       )
     } else if(!fixcons) {
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        water.availability==water &
                        coal.uclf==coaluclf & 
                        transmission.uclf==txuclf & 
@@ -897,7 +988,7 @@ shinyServer(function(input, output, session) {
                        design.transmission.uclf == designtxuclf
       )
     } else if(!fixexclGI) {      
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        water.availability==water &
                        coal.uclf==coaluclf & 
                        transmission.uclf==txuclf & 
@@ -909,7 +1000,7 @@ shinyServer(function(input, output, session) {
                        design.transmission.uclf == designtxuclf
       )
     } else {
-      crit <- subset(runMasterdata, policy_id==12 & 
+      crit <- subset(runMasterdata, policy_id==15 & 
                        water.availability==water &
                        coal.uclf==coaluclf & 
                        transmission.uclf==txuclf & 
@@ -962,7 +1053,7 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo1(80,theuclf,theuclf2,thecountry, thedom="demo1a","Assume 20% Less Water","All",
+      return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume Low Water","All",
                              values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
@@ -1014,6 +1105,21 @@ shinyServer(function(input, output, session) {
     }
   });
   
+  output$demo4 <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$country
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(demo4(thewater,theuclf,theuclf2,thecountry, thedom="demo4","","All",
+                   values$startyear,values$endyear,exclGI,varyload,load));                
+    }
+  });
   
   
   

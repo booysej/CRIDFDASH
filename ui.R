@@ -86,32 +86,32 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                "Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."
                                ),
                         column(2,sliderInput("d1water", "Water Availability % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
-                                             mean(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100,
-                                             20,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==14,]$water.availability))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==14,]$water.availability))*100, 
+                                             mean(unique(runMasterdata[runMasterdata$policy_id==14,]$water.availability))*100,
+                                             10,
                                              animate=FALSE,ticks=FALSE,width = "100%")),
                         column(2,sliderInput("d1uclf", "Coal UCLF % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100,
-                                             20,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==14,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==14,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==14,]$coal.uclf))*100,
+                                             10,
                                              animate=FALSE,ticks=FALSE)),
                         column(2,
                                sliderInput("d1uclf2", "Transmission UCLF % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100,
-                                             50,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==14,]$transmission.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==14,]$transmission.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==14,]$transmission.uclf))*100,
+                                             10,
                                              animate=FALSE,ticks=FALSE) 
                         ),
                         column(1,checkboxInput("withoutGrandInga", "Without Grand Inga", FALSE)), 
                         column(2,
                                sliderInput("d1cons", "Consumption % Adjustment", 
-                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
-                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
-                                           mean(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100,
-                                           20,
+                                           min(unique(runMasterdata[runMasterdata$policy_id==14,]$consumption.adjustment))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==14,]$consumption.adjustment))*100, 
+                                           mean(unique(runMasterdata[runMasterdata$policy_id==14,]$consumption.adjustment))*100,
+                                           10,
                                            animate=FALSE,ticks=FALSE)) 
                       ),
                       fluidRow(
@@ -135,7 +135,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         column(9,
                       bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
                         #"EVALUATE: New Capacity (Unconstrained)"
-                                                  ),multiple=F,                                          
+                                                  ),multiple=T,                                          
                           
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
                                       
@@ -166,7 +166,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                       
                                       
                       ),
-                     bsCollapsePanel("DEMO1: New Capacity for 2 Water Availability Scenarios",  style="info",                                                              
+                     bsCollapsePanel("1.1) New Capacity (2 Water Availability Scenarios)",  style="info",                                                              
                                      fluidRow(                                            
                                        column(12,     
                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
@@ -178,15 +178,15 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                        )
                                      )
                      ),
-                     bsCollapsePanel("DEMO2: Difference in Average Price per Country for 2 Consumption Scenarios",  style="info",                                                              
-                                     fluidRow(                                            
+                     bsCollapsePanel("2.1) Average Price Difference",  style="info",
+                                     fluidRow(      
                                        column(12,     
                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
                                                   showOutput("demo2", "highcharts"))
                                        )
                                      )
                      ),
-                     bsCollapsePanel("DEMO3: Percentage change in fuel and O&M Costs (Contraint until 2020 with default design)",  style="info",                                                              
+                     bsCollapsePanel("4.1) Fuel Cost vs Consumption (Contraint until 2020 with default design)",  style="info",                                                              
                                      fluidRow(                                            
                                        column(12,     
                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
@@ -194,7 +194,14 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                        )
                                      )
                      ),
-                     
+                     bsCollapsePanel("4.2) Cost vs Sensitivity (Contraint until 2020 with default design)",  style="info",                                                              
+                                     fluidRow(                                            
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo4", "highcharts"))
+                                       )
+                                     )
+                     ),
                      
                      bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
                                  showOutput("d1t2a", "highcharts"),
@@ -314,32 +321,32 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         ),
                         #column(1, "Fixed Year: 2020 (Keep Centralized Generation Fixed until this year)"),
                         column(2,sliderInput("d3water", "Water Availability % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100, 
-                                             mean(unique(runMasterdata[runMasterdata$policy_id==11,]$water.availability))*100,
-                                             20,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100, 
+                                             mean(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100,
+                                             10,
                                              animate=FALSE,ticks=FALSE,width = "100%")),
                         column(2,sliderInput("d3uclf", "Coal UCLF % (Assumption)", 
-                                             min(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100, 
-                                             max(unique(runMasterdata[runMasterdata$policy_id==11,]$coal.uclf))*100,
-                                             20,
+                                             min(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100, 
+                                             max(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100,
+                                             10,
                                              animate=FALSE,ticks=FALSE)),
                         column(2,
                                sliderInput("d3uclf2", "Transmission UCLF % (Assumption)", 
-                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
-                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100, 
-                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$transmission.uclf))*100,
-                                           50,
+                                           min(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100,
+                                           10,
                                            animate=FALSE,ticks=FALSE) 
                         ),
                         column(2,checkboxInput("d3withoutGrandInga", "Without Grand Inga", FALSE)), 
                         column(2,
                                sliderInput("d3cons", "Consumption % Adjustment", 
-                                           min(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
-                                           max(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100, 
-                                           mean(unique(runMasterdata[runMasterdata$policy_id==11,]$consumption.adjustment))*100,
-                                           20,
+                                           min(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100, 
+                                           max(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100, 
+                                           mean(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100,
+                                           10,
                                            animate=FALSE,ticks=FALSE)
                                )
                         
@@ -350,7 +357,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                     whereafter the model runs again. "),
                       bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
-                        multiple=F,                                 
+                        multiple=T,                                 
                         bsCollapsePanel("CHECK: Map View and Tx Energy Flows - click on country to select",style="info",                                                              
                                         fluidRow(
                                           column(12,                                                        

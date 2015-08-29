@@ -33,7 +33,8 @@ series1[series1$unit=="MWyr",]$value = series1[series1$unit=="MWyr",]$value * 8.
 series1[series1$unit=="MWyr",]$unit = "GWh"
 
 #load("data/run.masterdata.rdata")
-load("data/run.masterdata_11_12.rdata") 
+#load("data/run.masterdata_11_12.rdata") 
+load("data/run.masterdata_14_15.rdata")
 #runMasterdata = as.data.table(runMasterdata)
 
 nodes <- subset(ref_objects, show=='yes')
