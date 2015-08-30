@@ -470,7 +470,7 @@ shinyServer(function(input, output, session) {
     }
     
     h1 <- rCharts:::Highcharts$new()
-    h1$chart(type = "area",marginLeft=50,height=300)
+    h1$chart(type = "area",marginLeft=100,height=300)
     h1$title(text = paste("New Capacity (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
@@ -509,9 +509,9 @@ shinyServer(function(input, output, session) {
   demo2 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                               exclGI=FALSE,adjcons=FALSE,cons=0) {
     
-    td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
-    td1 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,90/100)
-    td2 = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,110/100)
+    td = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+    td1 = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+    td2 = getunconstraint(120/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
     if(length(td2[,1])==0) {return(NULL);}
@@ -556,15 +556,15 @@ shinyServer(function(input, output, session) {
     
     
     h1 <- rCharts:::Highcharts$new()
-    h1$chart(type = "column",marginLeft=50,height=500)
+    h1$chart(type = "column",marginLeft=100,height=500)
     h1$title(text = paste("Difference in Average Price (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
-      h1$series(list( list(name="20% less consumption",data=(tfinal1b$value - tfinalb$value)),
-                    list(name="20% more consumption",data=(tfinal2b$value - tfinalb$value))
+      h1$series(list( #list(name="0% less water (100%) compared to baseline (100%)",data=(tfinal1b$value - tfinalb$value)),
+                    list(name="20% more water (120%) compared to low water (100%)",data=(tfinal2b$value - tfinalb$value))
                     ))      
       # Print chart
     }
@@ -596,9 +596,9 @@ shinyServer(function(input, output, session) {
   demo3 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
 
-    td = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
-    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,90/100)
-    td2 = getconstraint(1,1,1,FALSE,1,thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,110/100)
+    td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td2 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
 
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
@@ -642,15 +642,15 @@ shinyServer(function(input, output, session) {
     
     
     h1 <- rCharts:::Highcharts$new()
-    h1$chart(type = "column",marginLeft=50,height=500)
+    h1$chart(type = "column",marginLeft=100,height=500)
     h1$title(text = paste("Percentage change in fuel and O&M Costs (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
-      h1$series(list( list(name="20% less consumption",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
-                      list(name="20% more consumption",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
+      h1$series(list( #list(name="20% less consumption",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
+                      list(name="20% more water",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
       ))      
       # Print chart
     }
@@ -682,8 +682,8 @@ shinyServer(function(input, output, session) {
   demo4 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
     
-    td = getconstraint(1,1,1,FALSE,1,thewater/100, 100/100,thetxuclf/100, exclGI,100/100)
-    td1 = getconstraint(1,1,1,FALSE,1,thewater/100, 90/100,thetxuclf/100, exclGI,100/100)
+    td = getconstraint(1,1,1,FALSE,1,100/100, 100/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,120/100, 100/100,thetxuclf/100, exclGI,100/100)
     
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
@@ -716,9 +716,12 @@ shinyServer(function(input, output, session) {
     }
     
     h1 <- rCharts:::Highcharts$new()
-    h1$chart(type = "column",marginLeft=50,height=500)
-    h1$title(text = paste("Percentage change in Cost (",thecountry,")",sep=""))
+    h1$chart(type = "column",marginLeft=100,height=500)
+    h1$title(text = paste("Percentage change in Cost for 20% more water (120%) (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
+    
+    tfinalb[tfinalb$value==0,]$value = 1
+    tfinal1b[tfinal1b$value==0,]$value = 1
     
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
@@ -1053,7 +1056,7 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume Low Water","All",
+      return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume Low Water (100%)","All",
                              values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
@@ -1068,7 +1071,7 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 20% More Water","All",
+      return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 20% More Water (120%)","All",
                    values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
@@ -1084,7 +1087,7 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo2(thewater,theuclf,theuclf2,thecountry, thedom="demo2","","All",
+      return(demo2(thewater,theuclf,theuclf2,thecountry, thedom="demo2",paste(values$startyear,values$endyear,sep="-"),"All",
                    values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
