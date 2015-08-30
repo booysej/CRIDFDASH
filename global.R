@@ -55,6 +55,6 @@ countries <- uniqueAndSorted(nodes$country.name)
 level <- uniqueAndSorted(nodes$level)
 nodes$status <- fix.status(nodes$status)
 
-#idedata = read.csv("data/20150821_input_explorer_dataset.csv")
+idedata = read.csv("data/20150821_input_explorer_dataset.csv")
 #ideseries = read.csv("data/20150821_masterdata_series.csv")
 #ideobjects = read.csv("data/20150821_masterdata_objects.csv")

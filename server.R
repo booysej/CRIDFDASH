@@ -11,7 +11,7 @@ library(RSQLite)
 library(leaflet)    #devtools::install_github("booysej/leaflet")
 library(shinyTree)  #devtools::install_github("booysej/shinyTree")
 library(jsonlite)
-#library(DT);
+library(DT);
 library(rCharts)
 library(R.cache)
 library(memoise)
@@ -25,6 +25,7 @@ shinyServer(function(input, output, session) {
   #addResourcePath('tiles2', system.file('legacy/www/tiles2', package='leaflet'))
   values <- reactiveValues(startyear=2011,
                            endyear=2040,
+                           selectedtech="",
                            map1suspended=TRUE,
                            map2suspended=FALSE,
                            selectavail="NONE",
@@ -446,6 +447,11 @@ shinyServer(function(input, output, session) {
         updateCheckboxInput(session, "withoutGrandInga", value = FALSE)
         updateSliderInput(session, "d1cons", value = 100)
         
+        return(query$demo)
+      }
+      if(query$demo==7) {
+        
+        updateTabsetPanel(session,"nav","Input Data Explorer")
         return(query$demo)
       }
     } else {
@@ -2075,8 +2081,8 @@ shinyServer(function(input, output, session) {
                        energy.sources.list <- lapply(energy.sources, function(asource){
                          status <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource)$status)
                          status.list <- lapply(status, function(astatus){
-                           #names <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$name)        
-                           tech <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$technology)        
+                           tech <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$name)        
+                           #tech <- uniqueAndSorted(subset(nodes,country.name == country & level==alevel & energy.source == asource & status == astatus)$technology)        
                            lnames <- as.list(tech)
                            names(lnames) <- tech
                            return(lnames)
@@ -2096,14 +2102,158 @@ shinyServer(function(input, output, session) {
     
     return(tree)
   })
+  output$treesel <- renderText({})
   
-  output$treesel <- renderText({
-    tree <- input$tree
+  output$x1 <- DT::renderDataTable({
+    if(values$selectedtech!="") {
     
-   
-      t = get_selected(tree)
+    withProgress(message = 'Loading data....',
+                 detail = 'Please wait...', value = 0, {
+                   st = values$selectedtech
+                   stid = ref_objects[ref_objects$technology==st,]$id
+                   stn = ref_objects[ref_objects$technology==st,]$name
+                   si = idedata[idedata$technology_id %in% stid,]$series_id
+                   
+                   datatable(ref_series[ref_series$id %in% si,],
+                             rownames=FALSE,
+                             #selection = list(mode = 'single', selected = c(1)),   
+                             selection="single",
+                             #selection = list(mode = 'single', selected = c("1")),
+                             options = list(pageLength = 5),
+                             #caption=
+                             #   paste("Select Properties below to view Timeseries Data for selected Technology:   ",          
+                             #         paste(nv[4],nv[5],nv[6],paste(nv[1]," (",nv[2],")",sep=""),sep=" -> "),sep="")
+                             # 
+                             caption=
+                               paste("Select Properties for: ", st," (", stn,")",sep="")
+                             #
+                   );
+                   
+                 })
+    
+    }
+  },server=FALSE)
+  
+  
+  output$x5 = DT::renderDataTable({  
+    if(values$selectedtech!="") {
+      st = values$selectedtech
+      stid = ref_objects[ref_objects$technology==st,]$id
+      stn = ref_objects[ref_objects$technology==st,]$name
+      si = idedata[idedata$technology_id %in% stid,]$series_id
+    
+      b = ref_series[ref_series$id %in% si,]
       
-     
+      isel = input$x1_rows_selected
+      
+      if(!is.null(isel)) {
+       b = b[isel,]
+       idedata$value = as.numeric(idedata$value)
+       
+       withProgress(message = 'Loading data....',
+                   detail = 'Please wait...', value = 0, { 
+                     
+                            
+                     
+                     a = datatable(idedata[(idedata$technology_id==stid & idedata$series_id==b$id) ,c(3:4)],
+                                   rownames=FALSE,
+                                   selection="single",
+                                   options = list(pageLength = 6),
+                                   #caption=htmltools::tags$b(paste("Data for: ",zname2,sep=""))
+                                   caption= paste("Data for: ",b$series,"",sep="")
+                     )    
+                     
+                     
+                   });
+       return(a);      
+      }
+    }
+  })
+  
+  
+  
+  output$timeseries <- renderChart({
+    isel = input$x1_rows_selected
+    
+    if(values$selectedtech!="" & !is.null(isel) ) {
+      st = values$selectedtech
+      stid = ref_objects[ref_objects$technology==st,]$id
+      stn = ref_objects[ref_objects$technology==st,]$name
+      stc = ref_objects[ref_objects$technology==st,]$country.name
+      si = idedata[idedata$technology_id %in% stid,]$series_id
+      
+      b = ref_series[ref_series$id %in% si,]
+      isel = input$x1_rows_selected
+      b = b[isel,]
+    
+      td = idedata[(idedata$technology_id==stid & idedata$series_id==b$id) ,c(3:4)]
+      
+      x = td$time
+      y = as.numeric(td$value)
+      
+      h1 <- Highcharts$new()
+      #h1$chart(type = "spline",zoomType="x",height=300,width=600)
+      h1$chart(type = "spline",zoomType="x")
+      h1$yAxis(title = list(text="Value"),min=0)
+      h1$xAxis(title = list(text="Year"), categories = x,
+               tickmarkPlacement="on")
+      
+      h1$title(text=paste(stn ,sep=""))
+      h1$subtitle(text=paste(stc ,sep=""))    
+      
+      h1$series( data = y, type="area", name=paste(" ",b$series ,sep="")  )
+      
+    
+      
+      
+      h1$legend(symbolWidth = 80)
+      h1$set(dom = 'timeseries')
+      h1$plotOptions(animation=FALSE,
+                     area=list(
+                       stacking="normal",
+                       lineColor="#666666",
+                       lineWidth=1,
+                       marker = list(
+                         lineWidth=1,
+                         lineColor="#666666"
+                       )
+                     ));
+      h1$exporting(enabled = T)    
+      return(h1)    
+    } else {
+      #updateCollapse(session, id = "mainpan", open = c("Map and Property View"),close=c("Time Series and Data"));
+      h1 <- Highcharts$new()     
+      h1$chart(type = "spline",zoomType="x")
+      h1$yAxis(title = list(text="Value"),min=0)
+      h1$xAxis(title = list(text="Year"), #categories = x,
+               tickmarkPlacement="on")
+      
+      h1$title(text=paste("",sep=""))
+      
+      
+      h1$legend(symbolWidth = 80)
+      h1$set(dom = 'timeseries')
+      h1$plotOptions(animation=FALSE,
+                     area=list(
+                       stacking="normal",
+                       lineColor="#666666",
+                       lineWidth=1,
+                       marker = list(
+                         lineWidth=1,
+                         lineColor="#666666"
+                       )
+                     ));
+      h1$exporting(enabled = T)    
+      return(h1)    
+    }
+    
+  })
+  
+  
+  
+  observe({
+    tree <- input$tree
+    t = get_selected(tree)
       if(length(t)>0) {
         ans = attr(t[[1]],"ancestry")
         if(length(ans)>0) {
@@ -2111,48 +2261,16 @@ shinyServer(function(input, output, session) {
         } else {
           country = t[[1]]
         }
-        
-        if (length(ans)==4) {          
-          paste(country,t[[1]],sep=",");
+        if (length(ans)==4) {  
+          lk = unlist(lapply(strsplit(ans,"\\("),function(x) { gsub(" $","",x[1]) } ))
+          as.character(ref_objects[ref_objects$energy.source==lk[3] & ref_objects$level==lk[2] & ref_objects$country.name==lk[1] & ref_objects$name==t[[1]],]$technology)
+          values$selectedtech = as.character(ref_objects[ref_objects$energy.source==lk[3] & ref_objects$level==lk[2] & ref_objects$country.name==lk[1] & ref_objects$name==t[[1]],]$technology)
         } else {
-          ""
+          values$selectedtech = ""
         }
-        
-        
-        
-        
       } else {
-        ""
+        values$selectedtech = ""
       }
-      
-        
-#         if (length(ans)==5) {          
-#           lk = unlist(lapply(strsplit(ans,"\\("),function(x) { gsub(" $","",x[1]) } ))          
-#           eff = as.character(enodes[enodes$name==lk[3] & 
-#                                       enodes$level==lk[2] & 
-#                                       enodes$country==lk[1],]$energyform.full) 
-#           
-#           myt = gsub("\\)","",strsplit(t[[1]][1],"\\(")[[1]][2] )
-#           
-#           values$leafnode = paste(myt, lk[4] ,eff,lk[1],lk[2],lk[3], sep=":")
-#           #values$leafnode = paste(t[[1]][1], lk[4] ,eff,lk[1],lk[2],lk[3], sep=":")
-#           values$country = lk[1]
-#           
-#         } else {
-#           values$leafnode = "None"
-#           values$leaftypes=data.frame()
-#           values$leafdata=data.frame()
-#           if(!is.na(country)) {                      
-#             values$country=country
-#           } else {            
-#             values$country=t[[1]][1]                    
-#           }
-#         }
-       
-         
-       
-    
-    
   })
   
   

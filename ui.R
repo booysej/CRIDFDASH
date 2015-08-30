@@ -6,7 +6,7 @@ library(shinyTree) # devtools::install_github("booysej/shinyTree")
 library(shinyBS)
 library(shinythemes)
 library(RSQLite)
-#library(DT)
+library(DT)
 library(rCharts)
 library(rpivotTable);
 
@@ -489,40 +489,27 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                          fluidRow(
                            column(6,"Drill down and select a technology.")                                                                          
                          )                                
-                        
                          ,width=4
                        ),
                        mainPanel(
-                         
                          fluidRow(
-                           column(4,
-                                  leafletOutput("map1", width="100%", height="300px"),
-                                  conditionalPanel(
-                                    condition = "$('html').hasClass('shiny-busy')",    
-                                    div(class = "busy",
-                                        p("Calculation in progress.."),
-                                        img(src="ajaxloaderq.gif")
-                                    )
-                                  )
-                           ),
-                           column(8,  
-                                  
+                           column(12,  
                                   DT::dataTableOutput('x1')
                            )
                          ),
-                
+                         #fluidRow(
+                        #   column(12,
+                        #          showOutput("timeseries", "highcharts")
+                        #   )                                                     
+                        # ),
                          fluidRow(
-                           
-                           column(12,
+                           column(8,
                                   showOutput("timeseries", "highcharts")
-                           )                                                     
-                         ),
-                         fluidRow(
-                           column(12,
+                           ),
+                           column(4,
                                   DT::dataTableOutput('x5')
                            )                                                     
                          )
-                         
                          ,width=8)
                 
               )
