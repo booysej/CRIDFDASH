@@ -460,6 +460,334 @@ shinyServer(function(input, output, session) {
     }
   })
   
+#   # 1.1
+#   demo1 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+#                     exclGI=FALSE,adjcons=FALSE,cons=0) {
+#     
+#     
+#     td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,cons/100)
+#     if(length(td[,1])==0) {return(NULL);}
+#     
+#     seriesname = "New Capacity"
+#     tfinal = subset(td, series == seriesname)  
+#     units = as.character(tfinal$unit[1])
+#     
+#     if (thecountry!="All") {
+#       tfinal = subset(tfinal, country.name == thecountry)          
+#     }
+#     if (thelevel!="All") {
+#       tfinal = subset(tfinal, level == thelevel)          
+#     }
+#     tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+#     
+#     
+#     #x = unique(tfinal$time)
+#     #x = x[order(x)]
+#     
+#     if(nrow(tfinal)>0) {
+#       
+#       tfinal2 = tfinal[, c("time","value","energy.source"),with=F]
+#       tfinal3 = tfinal2[, lapply(.SD, sum), by = c("time","energy.source")]     
+#       tfinal3 = tfinal3[(tfinal3$time>2010) & (tfinal3$time<2050) ,]
+#       
+#       tdat = as.data.frame(t(reshape(tfinal3,idvar=c("energy.source"),direction="wide")),stringsAsFactors=F)
+#       colnames(tdat) = as.character(unlist(tdat[1,]))
+#       tdat = tdat[-1,]
+#       rownames(tdat) = gsub("value\\.","",rownames(tdat))      
+#       
+#       x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
+#       rownames(x) = rownames(tdat)
+#     }
+#     
+#     h1 <- rCharts:::Highcharts$new()
+#     h1$chart(type = "area",marginLeft=100,height=300)
+#     h1$title(text = paste("New Capacity (",thecountry,")",sep=""))
+#     h1$subtitle(text = paste(stext,sep=""))
+#     
+#     if(nrow(tfinal)>0) {
+#       h1$xAxis(categories = paste("",rownames(x),sep="") )
+#       h1$yAxis(title = list(text = units),stackLabels= list(enabled=T))
+#       h1$data(x)      
+#       # Print chart
+#     }
+#     
+#     
+#     h1$legend(symbolWidth = 10)
+#     h1$set(dom = thedom)
+#     h1$plotOptions(animation=FALSE,
+#                    area=list(
+#                      stacking= 'normal',
+#                      animation=FALSE,
+#                      events=list(
+#                        legendItemClick = paste("#! function() {
+#                           console.log(this);
+#                           Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+#                               name: this.name,
+#                               visible: this.visible      
+#                           })
+#                          } !#",sep="")
+#                        #legendItemClick = "#! function() {alert(this.name);  } !#"
+#                      )
+#                    )
+#     )
+#     h1$exporting(enabled = T)    
+#     
+#     return(h1)       
+#   }  
+#   
+#   # 2.1
+#   demo2 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+#                               exclGI=FALSE,adjcons=FALSE,cons=0) {
+#     
+#     td = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+#     td1 = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+#     td2 = getunconstraint(120/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+#     if(length(td[,1])==0) {return(NULL);}
+#     if(length(td1[,1])==0) {return(NULL);}
+#     if(length(td2[,1])==0) {return(NULL);}
+#     
+#     seriesname = "Avg Price"
+#     tfinal = subset(td, series == seriesname)
+#     tfinal1 = subset(td1, series == seriesname)  
+#     tfinal2 = subset(td2, series == seriesname)  
+#     units = "Difference in Average Price"
+#     if (thecountry!="All") {
+#       tfinal = subset(tfinal, country.name == thecountry)          
+#       tfinal1 = subset(tfinal1, country.name == thecountry)
+#       tfinal2 = subset(tfinal2, country.name == thecountry)
+#     }
+#     if (thelevel!="All") {
+#       tfinal = subset(tfinal, level == thelevel)
+#       tfinal1 = subset(tfinal1, level == thelevel)          
+#       tfinal2 = subset(tfinal2, level == thelevel)          
+#     }
+#     tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+#     tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+#     tfinal2 = subset(tfinal2, time %in% (seq(startyear,endyear,1)))          
+#     
+#     if(nrow(tfinal)>0) {
+#       tfinala = tfinal[, c("time","value","country.name"),with=F]
+#       tfinalb = tfinala[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+#       tfinalb = tfinalb[(tfinalb$time>2010) & (tfinalb$time<2050) ,c("country.name","value"),with=F]
+#     }
+#     if(nrow(tfinal1)>0) {
+#       tfinal1a = tfinal1[, c("time","value","country.name"),with=F]
+#       tfinal1b = tfinal1a[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+#       tfinal1b = tfinal1b[(tfinal1b$time>2010) & (tfinal1b$time<2050) ,c("country.name","value"),with=F]
+#     }
+#     if(nrow(tfinal2)>0) {
+#       tfinal2a = tfinal2[, c("time","value","country.name"),with=F]
+#       tfinal2b = tfinal2a[, lapply(.SD, mean), by = c("country.name")]     # Mean of AVG Price
+#       tfinal2b = tfinal2b[(tfinal2b$time>2010) & (tfinal2b$time<2050) ,c("country.name","value"),with=F]
+#     }
+#     
+#     # tfinal1b$value - tfinalb$value # 20% less consumption
+#     # tfinal2b$value - tfinalb$value # 20% more consumption
+#     
+#     
+#     h1 <- rCharts:::Highcharts$new()
+#     h1$chart(type = "column",marginLeft=100,height=500)
+#     h1$title(text = paste("Difference in Average Price (",thecountry,")",sep=""))
+#     h1$subtitle(text = paste(stext,sep=""))
+#     
+#     if(nrow(tfinal)>0) {
+#       h1$xAxis(categories = as.character(tfinalb$country.name) )
+#       h1$yAxis(title = list(text = units))
+#       h1$series(list( #list(name="0% less water (100%) compared to baseline (100%)",data=(tfinal1b$value - tfinalb$value)),
+#                     list(name="20% more water (120%) compared to low water (100%)",data=(tfinal2b$value - tfinalb$value))
+#                     ))      
+#       # Print chart
+#     }
+#     
+#     
+#     h1$legend(symbolWidth = 10)
+#     h1$set(dom = thedom)
+#     h1$plotOptions(animation=FALSE,
+#                    column=list(
+#                      animation=FALSE,
+#                      events=list(
+#                        legendItemClick = paste("#! function() {
+#                           console.log(this);
+#                           Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+#                               name: this.name,
+#                               visible: this.visible      
+#                           })
+#                          } !#",sep="")
+#                        #legendItemClick = "#! function() {alert(this.name);  } !#"
+#                      )
+#                    )
+#     )
+#     h1$exporting(enabled = T)    
+#     
+#     return(h1)       
+#   }  
+#   
+#   # 4.1
+#   demo3 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+#                     exclGI=FALSE,adjcons=FALSE,cons=0) {
+# 
+#     td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+#     td1 = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+#     td2 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+# 
+#     if(length(td[,1])==0) {return(NULL);}
+#     if(length(td1[,1])==0) {return(NULL);}
+#     if(length(td2[,1])==0) {return(NULL);}
+#     
+#     seriesname = c("Fuel Cost","O&M Costs")
+#     tfinal = subset(td, series %in% seriesname)
+#     tfinal1 = subset(td1, series %in% seriesname)  
+#     tfinal2 = subset(td2, series %in% seriesname)  
+#     units = "Percentage change in fuel and O&M Costs"
+#     if (thecountry!="All") {
+#       tfinal = subset(tfinal, country.name == thecountry)          
+#       tfinal1 = subset(tfinal1, country.name == thecountry)
+#       tfinal2 = subset(tfinal2, country.name == thecountry)
+#     }
+#     if (thelevel!="All") {
+#       tfinal = subset(tfinal, level == thelevel)
+#       tfinal1 = subset(tfinal1, level == thelevel)          
+#       tfinal2 = subset(tfinal2, level == thelevel)          
+#     }
+#     tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+#     tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+#     tfinal2 = subset(tfinal2, time %in% (seq(startyear,endyear,1)))          
+#     
+#     if(nrow(tfinal)>0) {
+#       tfinala = tfinal[, c("time","value","country.name"),with=F]
+#       tfinalb = tfinala[, lapply(.SD, sum), by = c("country.name")]     
+#       tfinalb = tfinalb[ ,c("country.name","value"),with=F]
+#     }
+#     if(nrow(tfinal1)>0) {
+#       tfinal1a = tfinal1[, c("time","value","country.name"),with=F]
+#       tfinal1b = tfinal1a[, lapply(.SD, sum), by = c("country.name")]  
+#       tfinal1b = tfinal1b[ ,c("country.name","value"),with=F]
+#     }
+#     if(nrow(tfinal2)>0) {
+#       tfinal2a = tfinal2[, c("time","value","country.name"),with=F]
+#       tfinal2b = tfinal2a[, lapply(.SD, sum), by = c("country.name")]  
+#       tfinal2b = tfinal2b[ ,c("country.name","value"),with=F]
+#     }
+#     
+#     
+#     
+#     h1 <- rCharts:::Highcharts$new()
+#     h1$chart(type = "column",marginLeft=100,height=500)
+#     h1$title(text = paste("Percentage change in fuel and O&M Costs (",thecountry,")",sep=""))
+#     h1$subtitle(text = paste(stext,sep=""))
+#     
+#     if(nrow(tfinal)>0) {
+#       h1$xAxis(categories = as.character(tfinalb$country.name) )
+#       h1$yAxis(title = list(text = units))
+#       h1$series(list( #list(name="20% less consumption",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
+#                       list(name="20% more water",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
+#       ))      
+#       # Print chart
+#     }
+#     
+#     
+#     h1$legend(symbolWidth = 10)
+#     h1$set(dom = thedom)
+#     h1$plotOptions(animation=FALSE,
+#                    column=list(
+#                      animation=FALSE,
+#                      events=list(
+#                        legendItemClick = paste("#! function() {
+#                           console.log(this);
+#                           Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+#                               name: this.name,
+#                               visible: this.visible      
+#                           })
+#                          } !#",sep="")
+#                        #legendItemClick = "#! function() {alert(this.name);  } !#"
+#                      )
+#                    )
+#     )
+#     h1$exporting(enabled = T)    
+#     
+#     return(h1)       
+#   }  
+#   
+#   # 4.2
+#   demo4 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
+#                     exclGI=FALSE,adjcons=FALSE,cons=0) {
+#     
+#     td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+#     td1 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+#     
+#     if(length(td[,1])==0) {return(NULL);}
+#     if(length(td1[,1])==0) {return(NULL);}
+#     
+#     seriesname = c("Fuel Cost","O&M Costs","Import cost","Export revenue")
+#     tfinal = subset(td, series %in% seriesname)
+#     tfinal1 = subset(td1, series %in% seriesname)  
+#     
+#     units = "Percentage change in Cost"
+#     if (thecountry!="All") {
+#       tfinal = subset(tfinal, country.name == thecountry)          
+#       tfinal1 = subset(tfinal1, country.name == thecountry)
+#     }
+#     if (thelevel!="All") {
+#       tfinal = subset(tfinal, level == thelevel)
+#       tfinal1 = subset(tfinal1, level == thelevel)          
+#     }
+#     tfinal = subset(tfinal, time %in% (seq(startyear,endyear,1)))          
+#     tfinal1 = subset(tfinal1, time %in% (seq(startyear,endyear,1)))          
+#     
+#     if(nrow(tfinal)>0) {
+#       tfinala = tfinal[, c("time","value","country.name","series"),with=F]
+#       tfinalb = tfinala[, lapply(.SD, sum), by = c("country.name","series")]     
+#       tfinalb = tfinalb[ ,c("country.name","series","value"),with=F]
+#     }
+#     if(nrow(tfinal1)>0) {
+#       tfinal1a = tfinal1[, c("time","value","country.name","series"),with=F]
+#       tfinal1b = tfinal1a[, lapply(.SD, sum), by = c("country.name","series")]  
+#       tfinal1b = tfinal1b[ ,c("country.name","series","value"),with=F]
+#     }
+#     
+#     h1 <- rCharts:::Highcharts$new()
+#     h1$chart(type = "column",marginLeft=100,height=500)
+#     h1$title(text = paste("Percentage change in Cost for 20% more water (120%) (",thecountry,")",sep=""))
+#     h1$subtitle(text = paste(stext,sep=""))
+#     
+#     tfinalb[tfinalb$value==0,]$value = 1
+#     tfinal1b[tfinal1b$value==0,]$value = 1
+#     
+#     if(nrow(tfinal)>0) {
+#       h1$xAxis(categories = as.character(tfinalb$country.name) )
+#       h1$yAxis(title = list(text = units))
+#       h1$series(list( 
+#                       list(name="Export revenue",data=((tfinal1b[tfinal1b$series=="Export revenue",]$value - tfinalb[tfinalb$series=="Export revenue",]$value)/tfinalb[tfinalb$series=="Export revenue",]$value)*100 ),
+#                       list(name="Fuel Cost",data=((tfinal1b[tfinal1b$series=="Fuel Cost",]$value - tfinalb[tfinalb$series=="Fuel Cost",]$value)/tfinalb[tfinalb$series=="Fuel Cost",]$value)*100 ),
+#                       list(name="Import cost",data=((tfinal1b[tfinal1b$series=="Import cost",]$value - tfinalb[tfinalb$series=="Import cost",]$value)/tfinalb[tfinalb$series=="Import cost",]$value)*100 ),
+#                       list(name="O&M Costs",data=((tfinal1b[tfinal1b$series=="O&M Costs",]$value - tfinalb[tfinalb$series=="O&M Costs",]$value)/tfinalb[tfinalb$series=="O&M Costs",]$value)*100 )
+#       ))      
+#       # Print chart
+#     }
+#     
+#     
+#     h1$legend(symbolWidth = 10)
+#     h1$set(dom = thedom)
+#     h1$plotOptions(animation=FALSE,
+#                    column=list(
+#                      animation=FALSE,
+#                      events=list(
+#                        legendItemClick = paste("#! function() {
+#                           console.log(this);
+#                           Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+#                               name: this.name,
+#                               visible: this.visible      
+#                           })
+#                          } !#",sep="")
+#                        #legendItemClick = "#! function() {alert(this.name);  } !#"
+#                      )
+#                    )
+#     )
+#     h1$exporting(enabled = T)    
+#     
+#     return(h1)       
+#   }  
+  
   # 1.1
   demo1 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
@@ -520,16 +848,14 @@ shinyServer(function(input, output, session) {
                      animation=FALSE,
                      events=list(
                        legendItemClick = paste("#! function() {
-                          console.log(this);
-                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
-                              name: this.name,
-                              visible: this.visible      
-                          })
-                         } !#",sep="")
+                                               console.log(this);
+                                               Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                                               name: this.name,
+                                               visible: this.visible    }) } !#",sep="")
                        #legendItemClick = "#! function() {alert(this.name);  } !#"
                      )
+                     )
                    )
-    )
     h1$exporting(enabled = T)    
     
     return(h1)       
@@ -537,11 +863,12 @@ shinyServer(function(input, output, session) {
   
   # 2.1
   demo2 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
-                              exclGI=FALSE,adjcons=FALSE,cons=0) {
+                    exclGI=FALSE,adjcons=FALSE,cons=0) {
     
-    td = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+    td =  getunconstraint(110/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
     td1 = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
     td2 = getunconstraint(120/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
+    
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
     if(length(td2[,1])==0) {return(NULL);}
@@ -593,9 +920,9 @@ shinyServer(function(input, output, session) {
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
-      h1$series(list( #list(name="0% less water (100%) compared to baseline (100%)",data=(tfinal1b$value - tfinalb$value)),
-                    list(name="20% more water (120%) compared to low water (100%)",data=(tfinal2b$value - tfinalb$value))
-                    ))      
+      h1$series(list(  list(name="10% less water (100%) compared to baseline (110%)", data=(tfinal1b$value - tfinalb$value)),
+                       list(name="10% more water (120%) compared to low water (110%)",data=(tfinal2b$value - tfinalb$value))
+      ))      
       # Print chart
     }
     
@@ -607,16 +934,14 @@ shinyServer(function(input, output, session) {
                      animation=FALSE,
                      events=list(
                        legendItemClick = paste("#! function() {
-                          console.log(this);
-                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
-                              name: this.name,
-                              visible: this.visible      
-                          })
-                         } !#",sep="")
+                                               console.log(this);
+                                               Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                                               name: this.name,
+                                               visible: this.visible  }) } !#",sep="")
                        #legendItemClick = "#! function() {alert(this.name);  } !#"
                      )
+                     )
                    )
-    )
     h1$exporting(enabled = T)    
     
     return(h1)       
@@ -625,11 +950,11 @@ shinyServer(function(input, output, session) {
   # 4.1
   demo3 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
-
-    td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    
+    td = getconstraint(1,1,1,FALSE,1,110/100,  thecoaluclf/100,thetxuclf/100, exclGI,100/100)
     td1 = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
     td2 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
-
+    
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
     if(length(td2[,1])==0) {return(NULL);}
@@ -679,8 +1004,8 @@ shinyServer(function(input, output, session) {
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
-      h1$series(list( #list(name="20% less consumption",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
-                      list(name="20% more water",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
+      h1$series(list( list(name="10% less water than Baseline",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
+                      list(name="10% more water than Baseline",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
       ))      
       # Print chart
     }
@@ -693,16 +1018,14 @@ shinyServer(function(input, output, session) {
                      animation=FALSE,
                      events=list(
                        legendItemClick = paste("#! function() {
-                          console.log(this);
-                          Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
-                              name: this.name,
-                              visible: this.visible      
-                          })
-                         } !#",sep="")
+                                               console.log(this);
+                                               Shiny.onInputChange(\'",thedom,"LegendItemClick\', {
+                                               name: this.name,
+                                               visible: this.visible    }) } !#",sep="")
                        #legendItemClick = "#! function() {alert(this.name);  } !#"
                      )
+                     )
                    )
-    )
     h1$exporting(enabled = T)    
     
     return(h1)       
@@ -712,8 +1035,8 @@ shinyServer(function(input, output, session) {
   demo4 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
     
-    td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
-    td1 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td = getconstraint(1,1,1,FALSE,1,100/100, 100/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,120/100, 100/100,thetxuclf/100, exclGI,100/100)
     
     if(length(td[,1])==0) {return(NULL);}
     if(length(td1[,1])==0) {return(NULL);}
@@ -747,7 +1070,7 @@ shinyServer(function(input, output, session) {
     
     h1 <- rCharts:::Highcharts$new()
     h1$chart(type = "column",marginLeft=100,height=500)
-    h1$title(text = paste("Percentage change in Cost for 20% more water (120%) (",thecountry,")",sep=""))
+    h1$title(text = paste("Percentage change in Cost from -10% to +10% water from Baseline (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
     tfinalb[tfinalb$value==0,]$value = 1
@@ -757,10 +1080,10 @@ shinyServer(function(input, output, session) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
       h1$series(list( 
-                      list(name="Export revenue",data=((tfinal1b[tfinal1b$series=="Export revenue",]$value - tfinalb[tfinalb$series=="Export revenue",]$value)/tfinalb[tfinalb$series=="Export revenue",]$value)*100 ),
-                      list(name="Fuel Cost",data=((tfinal1b[tfinal1b$series=="Fuel Cost",]$value - tfinalb[tfinalb$series=="Fuel Cost",]$value)/tfinalb[tfinalb$series=="Fuel Cost",]$value)*100 ),
-                      list(name="Import cost",data=((tfinal1b[tfinal1b$series=="Import cost",]$value - tfinalb[tfinalb$series=="Import cost",]$value)/tfinalb[tfinalb$series=="Import cost",]$value)*100 ),
-                      list(name="O&M Costs",data=((tfinal1b[tfinal1b$series=="O&M Costs",]$value - tfinalb[tfinalb$series=="O&M Costs",]$value)/tfinalb[tfinalb$series=="O&M Costs",]$value)*100 )
+        list(name="Export revenue",data=((tfinal1b[tfinal1b$series=="Export revenue",]$value - tfinalb[tfinalb$series=="Export revenue",]$value)/tfinalb[tfinalb$series=="Export revenue",]$value)*100 ),
+        list(name="Fuel Cost",data=((tfinal1b[tfinal1b$series=="Fuel Cost",]$value - tfinalb[tfinalb$series=="Fuel Cost",]$value)/tfinalb[tfinalb$series=="Fuel Cost",]$value)*100 ),
+        list(name="Import cost",data=((tfinal1b[tfinal1b$series=="Import cost",]$value - tfinalb[tfinalb$series=="Import cost",]$value)/tfinalb[tfinalb$series=="Import cost",]$value)*100 ),
+        list(name="O&M Costs",data=((tfinal1b[tfinal1b$series=="O&M Costs",]$value - tfinalb[tfinalb$series=="O&M Costs",]$value)/tfinalb[tfinalb$series=="O&M Costs",]$value)*100 )
       ))      
       # Print chart
     }
@@ -787,6 +1110,8 @@ shinyServer(function(input, output, session) {
     
     return(h1)       
   }  
+  
+  
   
   # 5.1
   demo5 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
@@ -1165,6 +1490,83 @@ shinyServer(function(input, output, session) {
       }
   });
   
+#   output$demo1a <- renderChart({      
+#     thewater = input$d1water    
+#     theuclf = input$d1uclf
+#     theuclf2 = input$d1uclf2
+#     thecountry = values$country
+#     thepolicy = "unconstraint"    
+#     exclGI = input$withoutGrandInga
+#     load = input$d1cons
+#     varyload=TRUE
+#     
+#     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+#       return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume Low Water (100%)","All",
+#                              values$startyear,values$endyear,exclGI,varyload,load));                
+#     }
+#   });
+#   output$demo1b <- renderChart({      
+#     thewater = input$d1water    
+#     theuclf = input$d1uclf
+#     theuclf2 = input$d1uclf2
+#     thecountry = values$country
+#     thepolicy = "unconstraint"    
+#     exclGI = input$withoutGrandInga
+#     load = input$d1cons
+#     varyload=TRUE
+#     
+#     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+#       return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 20% More Water (120%)","All",
+#                    values$startyear,values$endyear,exclGI,varyload,load));                
+#     }
+#   });
+#   output$demo2 <- renderChart({      
+#     thewater = input$d1water    
+#     theuclf = input$d1uclf
+#     theuclf2 = input$d1uclf2
+#     thecountry = values$country
+#     thepolicy = "unconstraint"    
+#     exclGI = input$withoutGrandInga
+#     load = input$d1cons
+#     varyload=TRUE
+#     
+#     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+#       return(demo2(thewater,theuclf,theuclf2,thecountry, thedom="demo2",paste(values$startyear,values$endyear,sep="-"),"All",
+#                    values$startyear,values$endyear,exclGI,varyload,load));                
+#     }
+#   });
+#   output$demo3 <- renderChart({      
+#     thewater = input$d1water    
+#     theuclf = input$d1uclf
+#     theuclf2 = input$d1uclf2
+#     thecountry = values$country
+#     thepolicy = "unconstraint"    
+#     exclGI = input$withoutGrandInga
+#     load = input$d1cons
+#     varyload=TRUE
+#     
+#     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+#       return(demo3(thewater,theuclf,theuclf2,thecountry, thedom="demo3","","All",
+#                    values$startyear,values$endyear,exclGI,varyload,load));                
+#     }
+#   });
+#   output$demo4 <- renderChart({      
+#     thewater = input$d1water    
+#     theuclf = input$d1uclf
+#     theuclf2 = input$d1uclf2
+#     thecountry = values$country
+#     thepolicy = "unconstraint"    
+#     exclGI = input$withoutGrandInga
+#     load = input$d1cons
+#     varyload=TRUE
+#     
+#     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+#       return(demo4(thewater,theuclf,theuclf2,thecountry, thedom="demo4","","All",
+#                    values$startyear,values$endyear,exclGI,varyload,load));                
+#     }
+#   });
+#   
+  
   output$demo1a <- renderChart({      
     thewater = input$d1water    
     theuclf = input$d1uclf
@@ -1176,8 +1578,8 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume Low Water (100%)","All",
-                             values$startyear,values$endyear,exclGI,varyload,load));                
+      return(demo1(100,theuclf,theuclf2,thecountry, thedom="demo1a","Assume 10% Lower Water from Baseline (100%)","All",
+                   values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
   output$demo1b <- renderChart({      
@@ -1191,7 +1593,7 @@ shinyServer(function(input, output, session) {
     varyload=TRUE
     
     if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
-      return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 20% More Water (120%)","All",
+      return(demo1(120,theuclf,theuclf2,thecountry, thedom="demo1b","Assume 10% More Water from Baseline (120%)","All",
                    values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
@@ -1243,6 +1645,8 @@ shinyServer(function(input, output, session) {
                    values$startyear,values$endyear,exclGI,varyload,load));                
     }
   });
+  
+
   
   output$demo5 <- renderChart({      
     thewater = input$d1water    
