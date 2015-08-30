@@ -133,9 +133,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                bsButton("s1s2","Next (Step2) >>",style="primary")
                         ),
                         column(9,
-                      bsCollapse(id="story",  open=c(#"EVALUATE: Flows, Map View (Unconstrained) - click on country to filter"
-                        #"EVALUATE: New Capacity (Unconstrained)"
-                                                  ),multiple=T,                                          
+                      bsCollapse(id="story",multiple=T,                                          
                           
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
                                       
@@ -362,7 +360,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                       ),
                       tags$span("Test Sensitivities on Baseline and Scenario, if we keep centralized generation CONSTRAINT using the Original selected expansion plans (Step 1 and 2) up until the year 2020, 
                                     whereafter the model runs again. "),
-                      bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
+                      bsCollapse(id="story3",  #open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
                         multiple=T,                                 
                         bsCollapsePanel("CHECK: Map View and Tx Energy Flows - click on country to select",style="info",                                                              
@@ -389,6 +387,17 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         bsCollapsePanel("CHECK: Sensitivity",style="info",  
                                         tabsetPanel(id="sensnav",  type="pills", 
                                         
+                                            tabPanel("Average Price",        
+                                                             conditionalPanel(
+                                                               condition = "output.d3pivot5==null ",                                    
+                                                               div(class = "busy",
+                                                                   p("Loading Pivot ..."),
+                                                                   img(src="ajaxloaderq.gif")
+                                                               )
+                                                             ),
+                                                             rpivotTableOutput("d3pivot5",width="50%")
+                                            ),        
+                                                    
                                             tabPanel("Total Cost to variability in Actual Water",        
                                               conditionalPanel(
                                                 condition = "output.d3pivot1==null ",                                    

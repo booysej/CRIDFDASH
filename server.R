@@ -2016,7 +2016,7 @@ shinyServer(function(input, output, session) {
                        
                        
                        if(nrow(fs3)>0) {
-                         rpivotTable(data=fs3,rows=c("energy\\.source"),cols=c("time","resulttype"),aggregatorName="Sum",rendererName="Stacked Bar Chart",vals="value"
+                         rpivotTable(data=fs3,rows=c(""),cols=c("time","resulttype"),aggregatorName="Average",rendererName="Stacked Bar Chart",vals="value"
                                      ,hiddenAttributes=c("consuming\\.country","producing\\.country","policy_name","policy_id","run_id",
                                                          "design\\.coal\\.uclf",
                                                          "design\\.fix\\.year",
