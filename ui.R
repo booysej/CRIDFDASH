@@ -202,7 +202,14 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                        )
                                      )
                      ),
-                     
+                     bsCollapsePanel("5.1) Average Price vs Water Availability (Contraint until 2020 with default design)",  style="info",                                                              
+                                     fluidRow(                                            
+                                       column(12,     
+                                              div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
+                                                  showOutput("demo5", "highcharts"))
+                                       )
+                                     )
+                     ),
                      bsCollapsePanel("EVALUATE: Timeseries",style="info",                           
                                  showOutput("d1t2a", "highcharts"),
                                  showOutput("d1t2b", "highcharts"),
