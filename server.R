@@ -17,7 +17,7 @@ library(R.cache)
 library(memoise)
 # devtools::install_github(c("ramnathv/htmlwidgets", "smartinsightsfromdata/rpivotTable"))
 library(rpivotTable);
-library(cridfdata); #devtools::install_github("booysej/cridfdata")
+#library(cridfdata); #devtools::install_github("booysej/cridfdata")
 #library(diagram)
 #fileData <- reactiveFileReader(1000, session, 'data.csv', read.csv)
 
