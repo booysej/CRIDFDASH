@@ -510,7 +510,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
               ),
         tabPanel("HELP",                        
             fluidRow(
-              column(12,"")
+              column(12,
+                     img(src="images/STEP1.png",width="100%"))
             )
           )
   ) # navbar
