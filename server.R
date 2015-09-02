@@ -1,13 +1,9 @@
-#install.packages("../src/DiagrammeR",repos=NULL,type="source")
 #library(DiagrammeR) #devtools::install_github("booysej/DiagrammeR")
 library(shiny)
 #library(shinyAce)   #devtools::install_github("shinyAce", "trestletech")
 library(shinyBS)
 library(R.cache)
 library(RSQLite)
-# install.packages("/home/jacques/shiny-server/apps/src/leaflet",repos=NULL,type="source")
-# install.packages("/home/jacques/shiny-server/apps/src/rpivotTable",repos=NULL,type="source")
-# install.packages("/home/jacques/shiny-server/apps/src/shinyTree",repos=NULL,type="source")
 library(leaflet)    #devtools::install_github("booysej/leaflet")
 library(shinyTree)  #devtools::install_github("booysej/shinyTree")
 library(jsonlite)
@@ -15,31 +11,23 @@ library(DT);
 library(rCharts)
 library(R.cache)
 library(memoise)
-# devtools::install_github(c("ramnathv/htmlwidgets", "smartinsightsfromdata/rpivotTable"))
-library(rpivotTable);
+library(rpivotTable);# devtools::install_github(c("ramnathv/htmlwidgets", "smartinsightsfromdata/rpivotTable"))
+tryCatch(library(cridfdata), error = function(e) e, finally = print(""))
 #library(cridfdata); #devtools::install_github("booysej/cridfdata")
-#library(diagram)
-#fileData <- reactiveFileReader(1000, session, 'data.csv', read.csv)
+
+# DEBUG
+# install.packages("/home/jacques/shiny-server/apps/src/leaflet",repos=NULL,type="source")
+# install.packages("/home/jacques/shiny-server/apps/src/rpivotTable",repos=NULL,type="source")
+# install.packages("/home/jacques/shiny-server/apps/src/shinyTree",repos=NULL,type="source")
+# install.packages("../src/DiagrammeR",repos=NULL,type="source")
+# fileData <- reactiveFileReader(1000, session, 'data.csv', read.csv)
+#addResourcePath('tiles', system.file('legacy/www/tiles', package='leaflet'))    
 
 shinyServer(function(input, output, session) {
-  #addResourcePath('tiles', system.file('legacy/www/tiles', package='leaflet'))    
-  #addResourcePath('tiles2', system.file('legacy/www/tiles2', package='leaflet'))
-  #addResourcePath('cridfdata', system.file('rdata', package='cridfdata'))    
-  
-  values <- reactiveValues(startyear=2011,
-                           endyear=2040,
-                           selectedtech="",
-                           map1suspended=TRUE,
-                           map2suspended=FALSE,
-                           selectavail="NONE",
-                           country="All",                                                      
-                           geojson=geojson, 
-                           selectedfeat=NULL,                           
-                           abehave="showonclick",
-                           lockedbasepolicy="NONE",
-                           lockedscenpolicy="NONE",
-                           #lockedbasepolicy="Assume High Water Availability",
-                           #lockedscenpolicy="Assume Low Water Availability",
+
+  values <- reactiveValues(startyear=2011,endyear=2040,selectedtech="",map1suspended=TRUE,
+                           map2suspended=FALSE,selectavail="NONE",country="All",geojson=geojson, 
+                           selectedfeat=NULL,abehave="showonclick",lockedbasepolicy="NONE",lockedscenpolicy="NONE",
                            createdpolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,
                                                    thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE),
                                               list(name="Assume Low Water Availability",
@@ -48,8 +36,6 @@ shinyServer(function(input, output, session) {
                                                    thewater=120,thecoaluclf=100,thetxuclf=100,varyload=TRUE,load=100,withoutinga=FALSE)
                                               ),
                            availablepolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE))
-                           #availablepolicy=as.character(unique(txoutput$policy))[!grepl("unconstraint",
-                          #                                                              as.character(unique(txoutput$policy)))]
   )  
   ######## DASH Boards #############
   # Initial Map Step 1 setup
@@ -590,14 +576,14 @@ shinyServer(function(input, output, session) {
     
     h1 <- rCharts:::Highcharts$new()
     h1$chart(type = "column",marginLeft=100,height=500)
-    h1$title(text = paste("Difference in Average Price (",thecountry,")",sep=""))
+    h1$title(text = paste("The Difference in Average Price (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
     if(nrow(tfinal)>0) {
-      h1$xAxis(categories = as.character(tfinalb$country.name) )
+      h1$xAxis(categories = as.character(tfinalb$country.name), labels = list(rotation = -90))
       h1$yAxis(title = list(text = units))
       h1$series(list(  list(name="10% less water (100%) compared to baseline (110%)", data=(tfinal1b$value - tfinalb$value)),
-                       list(name="10% more water (120%) compared to low water (110%)",data=(tfinal2b$value - tfinalb$value))
+                       list(name="10% more water (120%) compared to baseline (110%)",data=(tfinal2b$value - tfinalb$value))
       ))      
       # Print chart
     }
@@ -606,7 +592,7 @@ shinyServer(function(input, output, session) {
     h1$legend(symbolWidth = 10)
     h1$set(dom = thedom)
     h1$plotOptions(animation=FALSE,
-                   column=list(
+                    column=list(
                      animation=FALSE,
                      events=list(
                        legendItemClick = paste("#! function() {
@@ -678,7 +664,7 @@ shinyServer(function(input, output, session) {
     h1$subtitle(text = paste(stext,sep=""))
     
     if(nrow(tfinal)>0) {
-      h1$xAxis(categories = as.character(tfinalb$country.name) )
+      h1$xAxis(categories = as.character(tfinalb$country.name), labels = list(rotation = -90 ) )
       h1$yAxis(title = list(text = units))
       h1$series(list( list(name="10% less water than Baseline",data=((tfinal1b$value - tfinalb$value)/tfinalb$value)*100 ),
                       list(name="10% more water than Baseline",data=((tfinal2b$value - tfinalb$value)/tfinalb$value)*100 )
@@ -793,8 +779,8 @@ shinyServer(function(input, output, session) {
   demo5 <- function(thewater,thecoaluclf,thetxuclf,thecountry, thedom="",stext="",thelevel="All",startyear=2011,endyear=2040,
                     exclGI=FALSE,adjcons=FALSE,cons=0) {
     
-    td = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
-    td1 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td = getconstraint(1,1,1,FALSE,1,110/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
+    td1 = getconstraint(1,1,1,FALSE,1,100/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
     td2 = getconstraint(1,1,1,FALSE,1,120/100, thecoaluclf/100,thetxuclf/100, exclGI,100/100)
     
     #td = getunconstraint(100/100, thecoaluclf/100,thetxuclf/100, exclGI,adjcons,100/100)
@@ -852,9 +838,10 @@ shinyServer(function(input, output, session) {
     if(nrow(tfinal)>0) {
       h1$xAxis(categories = as.character(tfinalb$country.name) )
       h1$yAxis(title = list(text = units))
-      h1$series(list( #list(name="0% less water (100%) compared to baseline (100%)",data=(tfinal1b$value - tfinalb$value)),
-        list(name="20% more water (120% constraint) compared to design water (100% unconstraint,100% constraint)",data=(tfinal2b$value - tfinalb$value))
-      ))      
+      h1$series(list( list(name="Low  water (100% constraint) compared to baseline (110%)",data=(tfinal1b$value - tfinalb$value)),
+                      list(name="High water (120% constraint) compared to baseline (110%)",data=(tfinal2b$value - tfinalb$value))
+      ))
+                      
       # Print chart
     }
     
@@ -2147,7 +2134,6 @@ shinyServer(function(input, output, session) {
   output$x5 = DT::renderDataTable({  
     if(values$selectedtech!="") {
       st = values$selectedtech
-      st = "SArEPCOANCSCmed"
       
       stid = ref_objects[ref_objects$technology==st,]$id
       stn = ref_objects[ref_objects$technology==st,]$name
