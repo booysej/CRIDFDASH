@@ -465,12 +465,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                       )  
              ),
 #             ########################### STEP4 ##########################
-              tabPanel("HELP",                        
-                      
-                       fluidRow(
-                         column(12,"")
-                       )
-              ),
+              
               tabPanel("Input Data Explorer",                        
                        sidebarPanel(
                          fluidRow(
@@ -512,8 +507,12 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                          )
                          ,width=8)
                 
-              )
-
+              ),
+        tabPanel("HELP",                        
+            fluidRow(
+              column(12,"")
+            )
+          )
   ) # navbar
   
   
