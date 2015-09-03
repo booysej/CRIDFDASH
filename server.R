@@ -68,6 +68,7 @@ shinyServer(function(input, output, session) {
       addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
       setView(22.8731,-22.9992,5) %>% hideArrows(mapname="d1m1",behaviour="hideall");
   })  
+  outputOptions(output, "d1m1", priority = 500)
   
   # Initial Map Step 3 setup
   output$d3m1 <- renderLeaflet({
@@ -79,6 +80,7 @@ shinyServer(function(input, output, session) {
             addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
             setView(22.8731,-22.9992,5) %>% hideArrows(mapname="d3m1",behaviour="hideall");
         })  
+  outputOptions(output, "d3m1", priority = 500)
   
   # click on sea map ( show all)
   observe({
@@ -2130,6 +2132,7 @@ shinyServer(function(input, output, session) {
     }
   },server=FALSE)
   
+  outputOptions(output, "x1", priority = 1000)
   
   output$x5 = DT::renderDataTable({  
     if(values$selectedtech!="") {

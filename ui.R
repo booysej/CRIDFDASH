@@ -511,9 +511,17 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
         tabPanel("HELP",                        
             fluidRow(
               column(12,
-                     img(src="images/STEP1.png",width="100%"))
+                     
+                     tabsetPanel(id="nav",  type="pills",   selected="STEP 1 - HELP",                        
+                                 ########################### STEP0 ##########################
+                                 tabPanel("STEP 1 - HELP",
+                                          img(src="images/STEP1.png",width="100%")),
+                                 tabPanel("STEP 2 - HELP",
+                                          img(src="images/STEP2.png",width="100%"))
+                     )
             )
           )
+        )
   ) # navbar
   
   
