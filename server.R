@@ -1,3 +1,5 @@
+###### Author: Jacques Booysen #####
+###### booysenjacques@gmail.com ####
 #library(DiagrammeR) #devtools::install_github("booysej/DiagrammeR")
 library(shiny)
 #library(shinyAce)   #devtools::install_github("shinyAce", "trestletech")
@@ -1529,6 +1531,10 @@ shinyServer(function(input, output, session) {
                                                       thetxuclf=input$d1uclf2,
                                                       varyload=varyload,load=load,withoutinga=exclGI)
                                                  )
+               
+               values$lockedbasepolicy="NONE";
+               values$lockedscenpolicy="NONE";
+               
                #cp = values$createdpolicy;
                #save(cp,file = "/tmp/cp.rdata");
                #values$availablepolicy <- isolate(values$createdpolicy)
@@ -1546,9 +1552,40 @@ shinyServer(function(input, output, session) {
     values$availablepolicy <- isolate(values$createdpolicy)
   });
   
+  # Close delete confirm
+  observe({
+    if(!is.null(input$s1deletepolicyN)) {
+    if(input$s1deletepolicyN>0) {
+      toggleModal(session, "modalDelete", toggle = "close")
+    }
+    }
+  });
+  
+  datasetInput <- reactive({
+    thewater = input$d1water    
+    thecoaluclf = input$d1uclf
+    thetxuclf = input$d1uclf2
+    exclGI = input$withoutGrandInga
+    cons = input$d1cons
+    td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,TRUE,cons/100)
+    td
+  })
+  
+  output$s1downloadpolicy <- downloadHandler(
+    filename = function() {
+      paste("UnconstraintSample", "csv", sep = ".")
+    },
+    content = function(file) {
+          write.table(datasetInput(), file, sep = ",",row.names = FALSE)
+    }
+  )
+  
+  
   # Delete a Policy
   observe({
-    if(input$s1deletepolicy>0) {
+    if(!is.null(input$s1deletepolicyY)) {
+    if(input$s1deletepolicyY>0) {
+      toggleModal(session, "modalDelete", toggle = "close")
       isolate({
         if (!is.null(isolate(input$createdpolicies))) {
             if(nchar(input$createdpolicies)>0) {
@@ -1560,20 +1597,11 @@ shinyServer(function(input, output, session) {
                 }
               }
               
-              #if(length(values$createdpolicy)==1) {
-#                 if (input$createdpolicies==values$createdpolicy$name) {
-              #     values$createdpolicy <- list(list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0))
-#             #    }
-              # }
-              
-              #values$createdpolicy <- isolate(values$createdpolicy[values$createdpolicy!=input$createdpolicies])
-              #if(length(isolate(values$createdpolicy))==0) {
-              #  values$createdpolicy <- list(name="NONE",thewater=0,thecoaluclf=0,thetxuclf=0)
-              #}
             }
         }
       });
-    }     
+    }
+    }
     values$availablepolicy <- isolate(values$createdpolicy)
   });  
   
@@ -2323,6 +2351,7 @@ shinyServer(function(input, output, session) {
         thepolicies = thepolicies[thepolicies!="NONE"]  
       }
       if (length(thepolicies)>=2) {
+        session$sendCustomMessage('activeNavs', 'STEP 2')
         updateTabsetPanel(session, "nav", selected = "STEP 2")
       } else {
         createAlert(session, "s1alert", "s1a", title = "Step1: Error",
@@ -2340,7 +2369,8 @@ shinyServer(function(input, output, session) {
    
     if(input$s2s3>0) {      
        if( (isolate(input$lockedscenario)!='NONE') && (isolate(input$lockedbaseline)!='NONE')  ) {       
-          updateTabsetPanel(session, "nav", selected = "STEP 3")
+         session$sendCustomMessage('activeNavs', 'STEP 3') 
+         updateTabsetPanel(session, "nav", selected = "STEP 3")
         } else {
           createAlert(session, "s2alert", "s2a", title = "Step2: Error",
                       content = "Please Lock>> both a BASELINE and SCENARIO policy before proceeding to Step3!", append = FALSE)

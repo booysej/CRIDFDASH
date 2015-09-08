@@ -1,3 +1,5 @@
+###### Author: Jacques Booysen #####
+###### booysenjacques@gmail.com ####
 #library(DiagrammeR)
 library(shiny)
 #library(shinyAce)
@@ -21,7 +23,29 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
     #tags$style(type="text/css", "select.pvtRenderer {width: 120px;}"),  
     tags$style(type="text/css", "select.pvtAttrDropdown {width: 100px;}"),  
     tags$style(type="text/css", "table#locktable { border-collapse:separate; border-spacing:0 5px;}") ,
-    tags$style(type="text/css", ".navbar {margin-bottom: 0px;}")    
+    tags$style(type="text/css", ".navbar {margin-bottom: 0px;}"),
+    tags$style(type="text/css", "li.ui-state-default.ui-state-hidden[role=tab]:not(.ui-tabs-active) {display: none;}"),
+    
+     tags$script("
+         window.onload = function() {
+            
+             $('#nav a:contains(\"STEP 2\")').parent().addClass('ui-state-disabled').addClass('disabled').addClass('ui-state-hidden');
+             $('#nav a:contains(\"STEP 3\")').parent().addClass('ui-state-disabled').addClass('disabled').addClass('ui-state-hidden');
+
+            $('#nav a:contains(\"STEP 2\")').click(function(event) {
+                event.stopImmediatePropagation();
+                return(false);
+            });
+           $('#nav a:contains(\"STEP 3\")').click(function(event) {
+                event.stopImmediatePropagation();
+                return(false);
+            });
+         };
+ 
+         Shiny.addCustomMessageHandler('activeNavs', function(nav_label) {
+            // $('#nav a:contains(\"' + nav_label + '\")').parent().removeClass('ui-state-disabled').removeClass('disabled').removeClass('ui-state-hidden');
+         });
+    ")
   ),    
   
   fluidRow(column(5,navbarPage("CRIDF SAPP Scenario Planning Tool: ",position="static-top")),
@@ -34,7 +58,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
              bsAlert("globalalert")
            )
   ),
-  tabsetPanel(id="nav",  type="pills",   selected="STEP 1",                        
+  tabsetPanel(id="nav",     selected="STEP 1", type="pills",  #widths = c(1,11)  ,                   
+  #tabsetPanel( type="pills",
               ########################### STEP0 ##########################
               tabPanel("STEP 0",
                        tabsetPanel(id="overview",     
@@ -83,7 +108,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                       #uiOutput("step1ui1"),
                       fluidRow(
                         column(3,tags$h5("STEP 1 - EVALUATE/CREATE POLICIES"),
-                               "Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."
+                               "Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'.",
+                               bsButton("s1s2","Next (Step2) >>",style="primary")
                                ),
                         column(2,sliderInput("d1water", "Water Availability % (Assumption)", 
                                              min(unique(runMasterdata[runMasterdata$policy_id==14,]$water.availability))*100, 
@@ -123,19 +149,22 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                fluidRow(
                                  column(8,uiOutput("s1info")),
                                  column(4,
-                                    "Show/Delete selected Policy", tags$br(),   
-                                    bsButton("s1loadpolicy","Show >",style="default")
-                                  ,tags$br(),tags$br(),
-                                  bsButton("s1deletepolicy","Delete",style="warning")
+                                    "Selected Policy:", tags$br(),   
+                                    bsButton("s1loadpolicy","Show >",style="info"),
+                                    tags$br(),tags$br(),
+                                    bsButton("s1deletepolicy","Delete",style="warning"),
+                                    #bsButton("s1downloadpolicy","Download",style="info"),
+                                    bsModal("modalDelete", "Delete Policy: Are you sure?", "s1deletepolicy", size = "small",
+                                            bsButton("s1deletepolicyY","Yes - Delete",style="warning"),
+                                            bsButton("s1deletepolicyN","No - Cancel",style="info"))
                                  )
                                ),
                                tags$h5("Create at least 2 Policies before proceeding to STEP2."),
-                               bsButton("s1s2","Next (Step2) >>",style="primary")
+                               downloadButton('s1downloadpolicy', 'Download (for Assumption)')
                         ),
                         column(9,
-                      bsCollapse(id="story",multiple=T,                                          
-                          
-                      bsCollapsePanel("EVALUATE: Flows, Map View (Unconstrained) - click on country to filter",style="info",                      
+                      bsCollapse(id="story",multiple=T, open = "EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",                                         
+                      bsCollapsePanel("EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",style="info",                      
                                       
                                       fluidRow(
                                         column(12,                                                        
@@ -148,13 +177,13 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                                ),
                                                leafletOutput("d1m1", width="90%",height=600),                               
                                                tags$div(style=" position: absolute;left: 70px;top: 500px;",
-                                                        sliderInput("d1year", " Tx Flows Year", 2010, 2030, 2015,1,animate=list(loop=TRUE),ticks=FALSE)
+                                                        sliderInput("d1year", " Tx Flows Year", 2010, 2031, 2015,1,animate=list(loop=TRUE),ticks=FALSE)
                                                )
                                         )
                                         
                                       )                             
                       ),   
-                      bsCollapsePanel("EVALUATE: New Capacity (Unconstrained)",  style="info",                                                              
+                      bsCollapsePanel("EVALUATE: New Capacity (Unconstraint)",  style="info",                                                              
                                       fluidRow(                                            
                                         column(12,     
                                                div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
@@ -223,10 +252,11 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
              tabPanel("STEP 2",                        
                        fluidRow(
                         column(6,tags$h5("STEP 2 - SELECT/LOCK POLICY"),                                                                 
-                               tags$h5("")),                                                                                                                      
-                        column(6,
                                bsButton("s2s1","<< Back (Step1)",style="primary"),
                                bsButton("s2s3","Next (Step3) >>",style="primary")                               
+                               ),                                                                                                                      
+                        column(6,
+                               tags$h5("")
                                )                        
                       ),
                       fluidRow(
@@ -325,29 +355,29 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                
                         ),
                         #column(1, "Fixed Year: 2020 (Keep Centralized Generation Fixed until this year)"),
-                        column(2,sliderInput("d3water", "Water Availability % (Assumption)", 
+                        column(2,sliderInput("d3water", "Water Availability % (Assumption After 2020)", 
                                              min(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100, 
                                              max(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100, 
                                              mean(unique(runMasterdata[runMasterdata$policy_id==15,]$water.availability))*100,
                                              10,
                                              animate=FALSE,ticks=FALSE,width = "100%")),
-                        column(2,sliderInput("d3uclf", "Coal UCLF % (Assumption)", 
+                        column(2,sliderInput("d3uclf", "Coal UCLF % (Assumption After 2020)", 
                                              min(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100, 
                                              max(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100, 
                                              max(unique(runMasterdata[runMasterdata$policy_id==15,]$coal.uclf))*100,
                                              10,
                                              animate=FALSE,ticks=FALSE)),
                         column(2,
-                               sliderInput("d3uclf2", "Transmission UCLF % (Assumption)", 
+                               sliderInput("d3uclf2", "Transmission UCLF % (Assumption After 2020)", 
                                            min(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100, 
                                            max(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100, 
                                            max(unique(runMasterdata[runMasterdata$policy_id==15,]$transmission.uclf))*100,
                                            10,
                                            animate=FALSE,ticks=FALSE) 
                         ),
-                        column(2,checkboxInput("d3withoutGrandInga", "Without Grand Inga", FALSE)), 
+                        column(2,checkboxInput("d3withoutGrandInga", "Without Grand Inga (After 2020)", FALSE)), 
                         column(2,
-                               sliderInput("d3cons", "Consumption % Adjustment", 
+                               sliderInput("d3cons", "Consumption % Adjustment (After 2020)", 
                                            min(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100, 
                                            max(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100, 
                                            mean(unique(runMasterdata[runMasterdata$policy_id==15,]$consumption.adjustment))*100,
@@ -360,7 +390,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                       ),
                       tags$span("Test Sensitivities on Baseline and Scenario, if we keep centralized generation CONSTRAINT using the Original selected expansion plans (Step 1 and 2) up until the year 2020, 
                                     whereafter the model runs again. "),
-                      bsCollapse(id="story3",  #open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
+                      bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
                         multiple=T,                                 
                         bsCollapsePanel("CHECK: Map View and Tx Energy Flows - click on country to select",style="info",                                                              
@@ -375,7 +405,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                                  ),
                                                  leafletOutput("d3m1", width="80%",height=600),                               
                                                  tags$div(style=" position: absolute;left: 70px;top: 350px;",
-                                                          sliderInput("d3year", " Tx Flows Year", 2010, 2030, 2015,1,animate=list(loop=TRUE),ticks=FALSE),
+                                                          sliderInput("d3year", " Tx Flows Year", 2020, 2031, 2015,1,animate=list(loop=TRUE),ticks=FALSE),
                                                           uiOutput("d3m1type")
                                                           
                                                  )
@@ -515,9 +545,12 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                      tabsetPanel(id="nav",  type="pills",   selected="STEP 1 - HELP",                        
                                  ########################### STEP0 ##########################
                                  tabPanel("STEP 1 - HELP",
-                                          img(src="images/STEP1.png",width="100%")),
+                                          img(src="images/STEP1.png",width="100%"),
+                                          img(src="images/STEP1-2.png",width="100%")
+                                          ),
                                  tabPanel("STEP 2 - HELP",
-                                          img(src="images/STEP2.png",width="100%"))
+                                          img(src="images/STEP2.png",width="100%")
+                                          )
                      )
             )
           )

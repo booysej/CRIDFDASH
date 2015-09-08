@@ -1,3 +1,5 @@
+###### Author: Jacques Booysen #####
+###### booysenjacques@gmail.com ####
  library(jsonlite)
  library(leaflet)  
  library(sp)
@@ -56,5 +58,6 @@ level <- uniqueAndSorted(nodes$level)
 nodes$status <- fix.status(nodes$status)
 
 idedata = read.csv("data/20150821_input_explorer_dataset.csv")
+idedata$value = as.numeric(as.character(idedata$value))
 #ideseries = read.csv("data/20150821_masterdata_series.csv")
 #ideobjects = read.csv("data/20150821_masterdata_objects.csv")
