@@ -449,7 +449,7 @@ shinyServer(function(input, output, session) {
       }
     } else {
       updateTabsetPanel(session,"nav","STEP 1")
-      updateCollapse(session,id="story",open="EVALUATE: Flows, Map View (Unconstrained) - click on country to filter")
+      updateCollapse(session,id="story",open="EVALUATE: Flows, Map View (Unconstraint) - click on country to filter")
     }
   })
   

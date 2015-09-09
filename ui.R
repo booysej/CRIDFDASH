@@ -67,7 +67,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                      fluidRow(
                                        column(6,
                                               tags$h4("STEP 0 - Overview")),                                                                                              
-                                       column(6,bsButton("s0s1","Next (Step1) >>",style="primary"),verbatimTextOutput("queryText"))
+                                       column(6,bsButton("s0s1","Next (Step1) >>",style="primary")) #,verbatimTextOutput("queryText"))
                                      ),
                                     tags$img(src="overview.gif")
                             ),
@@ -163,7 +163,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                downloadButton('s1downloadpolicy', 'Download (for Assumption)')
                         ),
                         column(9,
-                      bsCollapse(id="story",multiple=T, open = "EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",                                         
+                      bsCollapse(id="story",multiple=T, #open = "EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",                                         
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",style="info",                      
                                       
                                       fluidRow(
@@ -550,7 +550,14 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                           ),
                                  tabPanel("STEP 2 - HELP",
                                           img(src="images/STEP2.png",width="100%")
-                                          )
+                                          ),
+                                 tabPanel("STEP 3 - HELP",
+                                          img(src="images/STEP3.png",width="100%"),
+                                          img(src="images/STEP3-2.png",width="100%")
+                                 ),
+                                 tabPanel("Input Data Explorer - HELP",
+                                          img(src="images/IDE.png",width="100%")
+                                 )
                      )
             )
           )
