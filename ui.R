@@ -389,7 +389,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                         
                       ),
                       tags$span("Test Sensitivities on Baseline and Scenario, if we keep centralized generation CONSTRAINT using the Original selected expansion plans (Step 1 and 2) up until the year 2020, 
-                                    whereafter the model runs again. "),
+                                    whereafter the model runs again. "),downloadButton('s3downloadpolicy', 'Download (for Assumption)'),
                       bsCollapse(id="story3",  open=c("CHECK: Map View and Tx Energy Flows - click on country to select"),
                         #"CHECK: Sensitivity"),
                         multiple=T,                                 

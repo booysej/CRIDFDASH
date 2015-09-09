@@ -1463,13 +1463,16 @@ shinyServer(function(input, output, session) {
     
     a = list("Baseline" = "baseline",
              "Scenario" = "scenario")    
-    names(a) = c(paste("Baseline: ",values$lockedbasepolicy,sep=""), paste("Scenario: ",values$lockedscenpolicy,sep=""))
+    names(a) = c(paste("Baseline Design: ",values$lockedbasepolicy,sep=""), paste("Scenario Design: ",values$lockedscenpolicy,sep=""))
     
     radioButtons("d3txflowtype", "Scenario vs Baseline",a)    
   })
   
   output$d2t1 <- renderChart({
     if(!is.null(input$availablepolicies)) {
+      if(!is.null(values$availablepolicy)) {
+        if(length(values$availablepolicy)>0) {  
+        
       if(input$availablepolicies!="NONE") {
       
     thepolicies = do.call(c,lapply(values$availablepolicy,function(x) {x$name}))
@@ -1505,6 +1508,8 @@ shinyServer(function(input, output, session) {
       
       return(h1)  
     }
+        }
+      }
     }
   });
     
@@ -1561,7 +1566,7 @@ shinyServer(function(input, output, session) {
     }
   });
   
-  datasetInput <- reactive({
+  datasetInputUC <- reactive({
     thewater = input$d1water    
     thecoaluclf = input$d1uclf
     thetxuclf = input$d1uclf2
@@ -1571,12 +1576,85 @@ shinyServer(function(input, output, session) {
     td
   })
   
+  datasetInputC <- reactive({
+    
+    if( !is.null(values$lockedbasepolicy) && !is.null(values$lockedscenpolicy)) {    
+      if( (values$lockedbasepolicy!='NONE') && (values$lockedscenpolicy!='NONE')) {    
+        
+        thewater = input$d3water    
+        theuclf = input$d3uclf
+        theuclf2 = input$d3uclf2
+        thecountry = values$country
+        theyear = input$d3year
+        fixedyear = 2020 
+        exclGI = input$d3withoutGrandInga
+        cons = input$d3cons
+        flowtype = input$d3txflowtype
+        
+        
+        isolate({
+          if(is.null(flowtype)) {
+            flowtype = "baseline";
+          }
+          if(is.null(fixedyear)) {
+            fixedyear = 2020
+          }
+          
+          if (!is.null(thewater) && !is.null(theuclf) && !is.null(thecountry) && !is.null(theyear) && !is.null(flowtype) ) {
+            thepolicies = do.call(c,lapply(values$availablepolicy,function(x) {x$name}))
+            if(length(thepolicies)>1) {
+              
+              
+              r = values$availablepolicy[thepolicies==isolate(values$lockedbasepolicy)][[1]]
+              designwater = unlist(r[2])
+              designcoaluclf = unlist(r[3])
+              designtxuclf = unlist(r[4])
+              designexclGI = unlist(r[7])
+              varyload=TRUE
+              designcons = unlist(r[6])
+              td = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,designexclGI,designcons/100, 
+                       thewater/100, theuclf/100,theuclf2/100,exclGI,cons/100)
+              td$ref = "BASELINE";
+              td$refname = values$lockedbasepolicy;
+              
+              r = values$availablepolicy[thepolicies==isolate(values$lockedscenpolicy)][[1]]
+              designwater = unlist(r[2])
+              designcoaluclf = unlist(r[3])
+              designtxuclf = unlist(r[4])
+              designexclGI = unlist(r[7])
+              varyload=TRUE
+              designcons = unlist(r[6])
+              td2 = getconstraint(designwater/100,designcoaluclf/100,designtxuclf/100,designexclGI,designcons/100, 
+                                 thewater/100, theuclf/100,theuclf2/100,exclGI,cons/100)
+              td2$ref = "SCENARIO"
+              td2$refname = values$lockedscenpolicy;
+              return(as.data.table(rbind(td,td2)))
+              
+            }
+          }
+           
+        });
+        
+      }
+    }
+        
+  })
+  
   output$s1downloadpolicy <- downloadHandler(
     filename = function() {
       paste("UnconstraintSample", "csv", sep = ".")
     },
     content = function(file) {
-          write.table(datasetInput(), file, sep = ",",row.names = FALSE)
+          write.table(datasetInputUC(), file, sep = ",",row.names = FALSE)
+    }
+  )
+  
+  output$s3downloadpolicy <- downloadHandler(
+    filename = function() {
+      paste("ConstraintSample", "csv", sep = ".")
+    },
+    content = function(file) {
+      write.table(datasetInputC(), file, sep = ",",row.names = FALSE)
     }
   )
   
