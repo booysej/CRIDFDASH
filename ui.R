@@ -52,7 +52,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
            column(1,tags$br(),"Date Range (View):"),
                        column(4,
                               sliderInput("daterange", label = "Select", min = 2011, 
-                                          max = 2050, value = c(2015, 2025),ticks=FALSE,width="600px")
+                                          max = 2050, value = c(2015, 2030),ticks=FALSE,width="600px")
                               ),
            column(2,
              bsAlert("globalalert")
@@ -105,10 +105,10 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
               ),
               ########################### STEP1 ##########################
              tabPanel("STEP 1",
-                      #uiOutput("step1ui1"),
+                     # uiOutput("popup8"),
                       fluidRow(
                         column(3,tags$h5("STEP 1 - EVALUATE/CREATE POLICIES"),
-                               "Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'.",
+                               tags$small("Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."),
                                bsButton("s1s2","Next (Step2) >>",style="primary")
                                ),
                         column(2,sliderInput("d1water", "Water Availability % (Assumption)", 
@@ -166,8 +166,12 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                       bsCollapse(id="story",multiple=T, #open = "EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",                                         
                       bsCollapsePanel("EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",style="info",                      
                                       
+                                      bsModal(id="mapmodal", title="New Capacity",trigger=NULL, size = "large",
+                                              showOutput("d1mapchart", "highcharts")
+                                      ),
+                                      
                                       fluidRow(
-                                        column(12,                                                        
+                                        column(12,  
                                                conditionalPanel(
                                                  condition = "output.d1m1==null ",                                    
                                                  div(class = "busy",
@@ -178,7 +182,9 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                                leafletOutput("d1m1", width="90%",height=600),                               
                                                tags$div(style=" position: absolute;left: 70px;top: 500px;",
                                                         sliderInput("d1year", " Tx Flows Year", 2010, 2031, 2015,1,animate=list(loop=TRUE),ticks=FALSE)
-                                               )
+                                               ),
+                                               tags$div(style=" position: absolute;left: 70px;top: 0px;",
+                                                        imageOutput("m1legend",width = "100%", height = "30px"))
                                         )
                                         
                                       )                             
@@ -197,7 +203,8 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                      fluidRow(                                            
                                        column(12,     
                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),
-                                                  showOutput("demo1a", "highcharts"))
+                                                  showOutput("demo1a", "highcharts")
+                                                  )
                                        ),
                                        column(12,     
                                               div(class='wrapper',tags$style(".highcharts{height: 100px, width: 300px}"),

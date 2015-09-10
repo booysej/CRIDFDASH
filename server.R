@@ -25,11 +25,49 @@ tryCatch(library(cridfdata), error = function(e) e, finally = print(""))
 # fileData <- reactiveFileReader(1000, session, 'data.csv', read.csv)
 #addResourcePath('tiles', system.file('legacy/www/tiles', package='leaflet'))    
 
+plotIcons = function(values, pch = 0:14, year=2015, width = 30, height = 30, ...) {
+  n = length(pch)
+  files = character(n)
+  # create a sequence of png images
+  for (i in seq_len(n)) {
+    f = tempfile(fileext = '.png')        
+    val = values[[i]]
+    cols=NULL;
+    
+    if(length(val)>0) {
+      cols = unlist(lapply(names(val), function(x) { switch(x,
+                                                            "Coal"= "black",
+                                                            "Gas" = "chartreuse2",
+                                                            "Nuclear" = "darkorchid",
+                                                            "Oil" = "firebrick3",
+                                                            "Pump Storage" = "gold1",
+                                                            "Biomass" = "dodgerblue",
+                                                            "Hydro" = "darkgoldenrod2",
+                                                            "Solar PV" = "darkorchid3",
+                                                            "Solar Thermal" = "darkred",
+                                                            "Wind" = "cyan1") }))
+    }
+    
+    
+    png(f, width = width, height = height, bg = 'transparent')        
+    par(mar = c(1, 4, 1, 0))
+      barplot(do.call(rbind,val),  
+            col=cols,las=1,cex.names= 0.75,cex.axis= 0.75,main=as.character(year),cex.main=0.5 )
+    dev.off()        
+    files[i] = f
+  }
+  files
+}   
+
+
+       
+       
+
 shinyServer(function(input, output, session) {
 
-  values <- reactiveValues(startyear=2011,endyear=2040,selectedtech="",map1suspended=TRUE,
+  values <- reactiveValues(startyear=2011,endyear=2030,selectedtech="",map1suspended=TRUE,
                            map2suspended=FALSE,selectavail="NONE",country="All",geojson=geojson, 
-                           selectedfeat=NULL,abehave="showonclick",lockedbasepolicy="NONE",lockedscenpolicy="NONE",
+                           markercountry="All",selectedfeat=NULL,abehave="showonclick",lockedbasepolicy="NONE",lockedscenpolicy="NONE",
                            createdpolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,
                                                    thetxuclf=0,varyload=TRUE,load=0,withoutinga=FALSE),
                                               list(name="Assume Low Water Availability",
@@ -60,7 +98,57 @@ shinyServer(function(input, output, session) {
       values$map1suspended = FALSE;
     });
     
+    td = getunconstraint(thewater/100, theuclf/100,theuclf2/100, exclGI,TRUE,load/100)
+    perval = lapply(seq_along(dt$ID),function(i) {
+        tfinal = subset(td, country.name == as.character(dt@data[i,]$COUNTRY))
+        tfinal = subset(tfinal, series == "New Capacity")
+        tfinal2 = tfinal[, c("time","value","energy.source"),with=F]
+        tfinal3 = tfinal2[, lapply(.SD, sum), by = c("time","energy.source")]     
+        tfinal3 = subset(tfinal3, time == theyear)
+        
+        tdat = as.data.frame(t(reshape(tfinal3,idvar=c("energy.source"),direction="wide")),stringsAsFactors=F)
+        colnames(tdat) = as.character(unlist(tdat[1,]))
+        tdat = tdat[-1,]
+        rownames(tdat) = gsub("value\\.","",rownames(tdat))      
+        
+        x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
+        #rownames(x) = rownames(tdat)
+        if (length(a)>0) {
+          nn <<- rownames(x)
+        } else {
+          nn <<- NULL;
+        }
+        #x = x[order(rownames(x)),]
+        
+        ## HERE
+        a = as.list(round(x[,1]))
+        if (length(a)==0) {
+          a = as.list(rep(0,9))
+        }
+        names(a)=nn
+        return(a)
+        #list(0,0,0,0,0,0,0)
+        #as.character(dt@data[i,]$ID)
+    })
+    chart1Files = plotIcons(perval,dt@data$ID,year=theyear, 70, 70)     
+    
+    
     leaflet(height=600) %>%
+                   addMarkers(options = markerOptions(clickable = TRUE, draggable = FALSE, 
+                                                keyboard = TRUE, title = "Click for Detail", alt = "", 
+                                                zIndexOffset = 0, opacity = 0.8, 
+                                                riseOnHover = TRUE, riseOffset = 250),
+                        data = dt,
+                        layerId = dt@data$ID,
+                        icon = ~ icons(
+                          iconUrl = chart1Files[ID],
+                          iconAnchorX = 45, iconAnchorY = 55,
+                          popupAnchorX = 0, popupAnchorY = 0
+                        )
+                        #popup = "<div id='popup8' class='shiny-html-output shiny-bound-output'></div>"
+                        #popup = uiOutput("popup8",inline=TRUE)
+                        #popup = dt$ID
+                        ) %>% 
 #         showArrows(mapname="d1m1",
 #                 jsonfile="thedata.geojson",
 #                 linkfile="linksd1m1.csv",    
@@ -72,6 +160,33 @@ shinyServer(function(input, output, session) {
   })  
   outputOptions(output, "d1m1", priority = 500)
   
+  output$m1legend <- renderImage({
+    list(src = "www/images/legend2.png",
+         contentType = 'image/png',
+         width = 600,
+         height = 40,
+         alt = "This is alternate text")
+  },deleteFile=FALSE);
+  
+  
+  observe({
+    click <- input$d1m1_marker_click;
+    if(is.null(click))
+      return()
+    print(click);
+    text2 <-paste(" ", as.character(dt[dt$ID==click$id,]$COUNTRY) )
+    
+    map = leafletProxy("d1m1");  
+    #map %>% addPopups( click$lng, click$lat, text2);
+    
+    isolate({
+      values$markercountry <- as.character(dt[dt$ID==click$id,]$COUNTRY)
+    });
+    
+    toggleModal(session, "mapmodal", toggle = "open")
+    #map %>% addPopups( click$lng, click$lat, uiOutput("test1"));
+  })
+    
   # Initial Map Step 3 setup
   output$d3m1 <- renderLeaflet({
           isolate({
@@ -215,12 +330,59 @@ shinyServer(function(input, output, session) {
     write.csv(t,file=paste("www/links",mapname,".csv",sep=""),row.names = FALSE)
     abe = "showall";
     if(proxy) {
+      td = getunconstraint(thewater/100, thecoaluclf/100,thetxuclf/100, exclGI,TRUE,cons/100)
+      perval = lapply(seq_along(dt$ID),function(i) {
+        tfinal = subset(td, country.name == as.character(dt@data[i,]$COUNTRY))
+        tfinal = subset(tfinal, series == "New Capacity")
+        tfinal2 = tfinal[, c("time","value","energy.source"),with=F]
+        tfinal3 = tfinal2[, lapply(.SD, sum), by = c("time","energy.source")]     
+        tfinal3 = subset(tfinal3, time == theyear)
+        
+        tdat = as.data.frame(t(reshape(tfinal3,idvar=c("energy.source"),direction="wide")),stringsAsFactors=F)
+        colnames(tdat) = as.character(unlist(tdat[1,]))
+        tdat = tdat[-1,]
+        rownames(tdat) = gsub("value\\.","",rownames(tdat))      
+        
+        x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
+        #rownames(x) = rownames(tdat)
+        if (length(a)>0) {
+          nn <<- rownames(x)
+        } else {
+          nn <<- NULL;
+        }
+        #x = x[order(rownames(x)),]
+        
+        ## HERE
+        a = as.list(round(x[,1]))
+        if (length(a)==0) {
+          a = as.list(rep(0,9))
+        }
+        names(a)=nn
+        return(a)
+        #list(0,0,0,0,0,0,0)
+        #as.character(dt@data[i,]$ID)
+      })
+      chart1Files = plotIcons(perval,dt@data$ID,year=theyear, 70, 70)  
+      
       proxy2 = leafletProxy(mapname);     
       proxy2  %>% showArrows(mapname=mapname,
                              jsonfile="thedata.geojson",
                              linkfile=paste("links",mapname,".csv",sep=""),    
                              behaviour=abe,    
-                             showid="")  %>% hideArrows(mapname=mapname,behaviour="hideall");
+                             showid="")  %>% hideArrows(mapname=mapname,behaviour="hideall") %>% 
+                  clearMarkers() %>%
+                  addMarkers(options = markerOptions(clickable = TRUE, draggable = FALSE, 
+                                         keyboard = TRUE, title = "Click for Detail", alt = "", 
+                                         zIndexOffset = 0, opacity = 0.8, 
+                                         riseOnHover = TRUE, riseOffset = 250),
+                      data = dt,
+                      layerId = dt@data$ID,
+                      icon = ~ icons(
+                        iconUrl = chart1Files[ID],
+                        iconAnchorX = 45, iconAnchorY = 55,
+                        popupAnchorX = 0, popupAnchorY = 0
+                      )
+                    ); 
     }
   }  
   
@@ -491,6 +653,13 @@ shinyServer(function(input, output, session) {
       
       x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
       rownames(x) = rownames(tdat)
+      
+      nn = colnames(x)
+      x2 = as.data.frame(x[,order(nn)])
+      nn = nn[order(nn)]
+      colnames(x2) = nn
+      x = x2
+      
     }
     
     h1 <- rCharts:::Highcharts$new()
@@ -909,10 +1078,18 @@ shinyServer(function(input, output, session) {
       
       x = as.data.frame(apply(tdat,2,as.numeric),stringsAsFactors=F)
       rownames(x) = rownames(tdat)
+      #print(x)
+      
+      nn = colnames(x)
+      x2 = as.data.frame(x[,order(nn)])
+      nn = nn[order(nn)]
+      colnames(x2) = nn
+      x = x2
+      #print(x)
     }
     
     h1 <- rCharts:::Highcharts$new()
-    h1$chart(type = "column",marginLeft=50,height=300)
+    h1$chart(type = "column",marginLeft=60,height=300)
     h1$title(text = paste("New Capacity (",thecountry,")",sep=""))
     h1$subtitle(text = paste(stext,sep=""))
     
@@ -924,10 +1101,25 @@ shinyServer(function(input, output, session) {
     }
     
     
+    cols = unlist(lapply(rownames(x), function(x) { switch(x,
+                                                          "Coal"= "#7CB5EC",
+                                                          "Gas" = "#434348",
+                                                          "Nuclear" = "#90ED7D",
+                                                          "Oil" = "#F7A35C",
+                                                          "Pump Storage" = "#91E8E1",
+                                                          "Biomass" = "#8085E9",
+                                                          "Hydro" = "#F15C80",
+                                                          "Solar PV" = "#E4D354",
+                                                          "Solar Thermal" = "#8085E8",
+                                                          "Wind" = "#8D4653") }))
+    
+    #h1$colors(cols)
     h1$legend(symbolWidth = 10)
     h1$set(dom = thedom)
     h1$plotOptions(animation=FALSE,
                    column=list(
+                     #colorByPoint=TRUE,
+                     #colors=cols,
                       stacking= 'normal',
                       animation=FALSE,
                       events=list(
@@ -1161,6 +1353,22 @@ shinyServer(function(input, output, session) {
         return(barunconstraint(thewater,theuclf,theuclf2,thecountry, thedom="d1t1","Unconstraint","All",
                                values$startyear,values$endyear,exclGI,varyload,load));                
       }
+  });
+  
+  output$d1mapchart <- renderChart({      
+    thewater = input$d1water    
+    theuclf = input$d1uclf
+    theuclf2 = input$d1uclf2
+    thecountry = values$markercountry
+    thepolicy = "unconstraint"    
+    exclGI = input$withoutGrandInga
+    load = input$d1cons
+    varyload=TRUE
+    
+    if (!is.null(thewater) & !is.null(theuclf) & !is.null(theuclf2) & !is.null(thecountry)   ) {
+      return(barunconstraint(thewater,theuclf,theuclf2,thecountry, thedom="d1mapchart","Unconstraint","All",
+                             values$startyear,values$endyear,exclGI,varyload,load));                
+    }
   });
   
   output$demo1a <- renderChart({      

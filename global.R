@@ -24,6 +24,11 @@
                      "Uganda"="Uganda","Zambia"="Zambia","Zimbabwe"="Zimbabwe")  
 
 dt = readOGR(dsn="www/thedata.geojson",layer = 'OGRGeoJSON') 
+dt2 = dt@data
+dt2$ID = as.numeric(as.character(dt2$ID))
+dt2$ID = dt2$ID + 1
+dt@data = dt2
+
 dtfrom = dt@data[,c("CODE","COUNTRY")]
 names(dtfrom) = c("source","producing.country")
 dtto = dt@data[,c("CODE","COUNTRY")]
