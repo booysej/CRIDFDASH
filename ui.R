@@ -52,7 +52,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
            column(1,tags$br(),"Date Range (View):"),
                        column(4,
                               sliderInput("daterange", label = "Select", min = 2011, 
-                                          max = 2050, value = c(2015, 2030),ticks=FALSE,width="600px")
+                                          max = 2050, value = c(2015, 2025),ticks=FALSE,width="600px")
                               ),
            column(2,
              bsAlert("globalalert")

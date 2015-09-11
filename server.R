@@ -25,6 +25,7 @@ tryCatch(library(cridfdata), error = function(e) e, finally = print(""))
 # fileData <- reactiveFileReader(1000, session, 'data.csv', read.csv)
 #addResourcePath('tiles', system.file('legacy/www/tiles', package='leaflet'))    
 
+
 plotIcons = function(values, pch = 0:14, year=2015, width = 30, height = 30, ...) {
   n = length(pch)
   files = character(n)
@@ -48,11 +49,15 @@ plotIcons = function(values, pch = 0:14, year=2015, width = 30, height = 30, ...
                                                             "Wind" = "cyan1") }))
     }
     
-    
     png(f, width = width, height = height, bg = 'transparent')        
     par(mar = c(1, 4, 1, 0))
+    
+    if(sum( as.numeric(as.character(unlist(val))) )>0) {
       barplot(do.call(rbind,val),  
-            col=cols,las=1,cex.names= 0.75,cex.axis= 0.75,main=as.character(year),cex.main=0.5 )
+            col=cols,las=1,cex.names= 0.75,cex.axis= 0.75,main=as.character(year),cex.main=0.5,ylab="MW",cex.lab=0.75 )
+    } else {
+      plot(c(1,2),type="n",xaxt="n",yaxt="n",ylab="",xlab="",bty="n")
+    }
     dev.off()        
     files[i] = f
   }
@@ -65,7 +70,7 @@ plotIcons = function(values, pch = 0:14, year=2015, width = 30, height = 30, ...
 
 shinyServer(function(input, output, session) {
 
-  values <- reactiveValues(startyear=2011,endyear=2030,selectedtech="",map1suspended=TRUE,
+  values <- reactiveValues(startyear=2015,endyear=2025,selectedtech="",map1suspended=TRUE,
                            map2suspended=FALSE,selectavail="NONE",country="All",geojson=geojson, 
                            markercountry="All",selectedfeat=NULL,abehave="showonclick",lockedbasepolicy="NONE",lockedscenpolicy="NONE",
                            createdpolicy=list(list(name="NONE",thewater=0,thecoaluclf=0,
@@ -155,7 +160,14 @@ shinyServer(function(input, output, session) {
 #                 behaviour=abe,    
 #                 showid="") %>%        
       addGeoJSON(geojson,layerId="main") %>%
-      addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
+      #addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
+      addProviderTiles("Stamen.Watercolor",options=tileOptions(minZoom = 4, maxZoom = 6))  %>% 
+#       addWMSTiles(
+#         "http://ws.carmen.developpement-durable.gouv.fr/WMS/11/eau_bassin_L214_consultation2",
+#         layers = "Cours_d_eau_classes_en_liste_1",
+#         options = WMSTileOptions(format = "image/png", transparent = TRUE),
+#         attribution = "NASA"
+#       ) %>% 
       setView(22.8731,-22.9992,5) %>% hideArrows(mapname="d1m1",behaviour="hideall");
   })  
   outputOptions(output, "d1m1", priority = 500)
@@ -194,7 +206,8 @@ shinyServer(function(input, output, session) {
           });
           leaflet(height=600) %>%
             addGeoJSON(geojson,layerId="main") %>%
-            addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
+            addProviderTiles("Stamen.Watercolor",options=tileOptions(minZoom = 4, maxZoom = 6))  %>% 
+            #addTiles(options=tileOptions(minZoom = 4, maxZoom = 6),attribution="Enerweb EOH")   %>% 
             setView(22.8731,-22.9992,5) %>% hideArrows(mapname="d3m1",behaviour="hideall");
         })  
   outputOptions(output, "d3m1", priority = 500)
@@ -1086,7 +1099,7 @@ shinyServer(function(input, output, session) {
       colnames(x2) = nn
       x = x2
       #print(x)
-    }
+    } else {x = rep(0,9)}
     
     h1 <- rCharts:::Highcharts$new()
     h1$chart(type = "column",marginLeft=60,height=300)
