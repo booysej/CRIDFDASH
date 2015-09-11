@@ -24,6 +24,7 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
     tags$style(type="text/css", "select.pvtAttrDropdown {width: 100px;}"),  
     tags$style(type="text/css", "table#locktable { border-collapse:separate; border-spacing:0 5px;}") ,
     tags$style(type="text/css", ".navbar {margin-bottom: 0px;}"),
+    tags$style(type="text/css", "label {font-size: 90%;}"),
     tags$style(type="text/css", "li.ui-state-default.ui-state-hidden[role=tab]:not(.ui-tabs-active) {display: none;}"),
     
      tags$script("
@@ -108,7 +109,6 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                      # uiOutput("popup8"),
                       fluidRow(
                         column(3,tags$h5("STEP 1 - EVALUATE/CREATE POLICIES"),
-                               tags$small("Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."),
                                bsButton("s1s2","Next (Step2) >>",style="primary")
                                ),
                         column(2,sliderInput("d1water", "Water Availability % (Assumption)", 
@@ -159,8 +159,10 @@ shinyUI(fluidPage( theme = shinytheme("spacelab"),
                                             bsButton("s1deletepolicyN","No - Cancel",style="info"))
                                  )
                                ),
-                               tags$h5("Create at least 2 Policies before proceeding to STEP2."),
-                               downloadButton('s1downloadpolicy', 'Download (for Assumption)')
+                               
+                               downloadButton('s1downloadpolicy', 'Download (for Assumption)'), tags$br(),
+                               tags$h5("Help: Create policies based on assuptions by changing the slider positions (Generation Expantion Plan runs UNCONSTRAINT), then when happy enter a 'Policy Name' and then click 'Create Policy'."),
+                               tags$h5("Note: Create at least 2 Policies before proceeding to STEP2, Policy names must be at least 6 Characters long.")
                         ),
                         column(9,
                       bsCollapse(id="story",multiple=T, #open = "EVALUATE: Flows, Map View (Unconstraint) - click on country to filter",                                         
